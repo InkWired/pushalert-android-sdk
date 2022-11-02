@@ -1,0 +1,54 @@
+apply plugin: 'com.android.library'
+//apply from: 'maven-local.gradle'
+
+android {
+    namespace 'co.pushalert'
+    compileSdkVersion 33
+
+
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 33
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            //proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+        }
+
+        debug{
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    api platform('com.google.firebase:firebase-bom:30.1.0')
+    api 'com.google.firebase:firebase-messaging'
+    api 'com.google.firebase:firebase-analytics'
+    api 'com.google.android.gms:play-services-location:21.0.0'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    api 'androidx.core:core:1.9.0'
+}
+
+task deleteJar(type: Delete) {
+    delete 'libs/logmanagementlib.jar'
+}
+
+task createJar(type: Copy) {
+    from('build/intermediates/bundles/release/')
+    into('libs/')
+    include('classes.jar')
+    rename('classes.jar', 'logmanagementlib.jar')
+}
+
+createJar.dependsOn(deleteJar, build)

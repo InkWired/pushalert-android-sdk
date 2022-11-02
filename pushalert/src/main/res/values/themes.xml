@@ -1,0 +1,16 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--Theme.AppCompat.Light.Dialog.Alert-->
+    <style name="ThemeAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
+    <!--<style name="PermissionRequestTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+    </style>-->
+
+    <style name="PermissionRequestTheme" parent="android:Theme.DeviceDefault.Dialog.NoActionBar">
+    </style>
+
+</resources>

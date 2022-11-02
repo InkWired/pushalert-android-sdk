@@ -1,0 +1,61 @@
+apply plugin: 'maven-publish'
+
+task sourceJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier "sources"
+}
+
+afterEvaluate {
+    publishToMavenLocal {
+        def groupId = 'co.pushalert'
+        def artifactId = 'AndroidSDKTest'
+        def versionName = '1.0.0' + "-local"
+        def debugSuffix = "-debug"
+        def releaseSuffix = "-release"
+
+        publishing {
+            publications {
+                LibraryRelease(MavenPublication) {
+                    //artifact(sourceJar)
+                    setGroupId groupId
+                    setArtifactId artifactId
+                    version versionName + releaseSuffix
+
+                    artifact bundleReleaseAar
+                }
+                LibraryDebug(MavenPublication) {
+                    //artifact(sourceJar)
+                    setGroupId groupId
+                    setArtifactId artifactId
+                    version versionName + debugSuffix
+
+                    artifact bundleDebugAar
+                }
+            }
+            publications.all {
+                pom.withXml {
+                    asNode().dependencies.'*'
+                            .findAll() {
+                                it.scope.text() == 'runtime' &&
+                                        project.configurations.implementation.allDependencies.find {
+                                            dep -> dep.name == it.artifactId.text()
+                                        }
+                            }.each { it.scope*.value = 'compile' }
+                }
+            }
+        }
+
+        doLast {
+            def prettyPrint = {
+                1.upto(100, { print "=" })
+                println()
+            }
+            println()
+            prettyPrint()
+            println "PUBLICATION FINISHED"
+            println "Artifact RELEASE: " + groupId + ":" + artifactId + ":" + versionName + releaseSuffix
+            println "Artifact DEBUG: " + groupId + ":" + artifactId + ":" + versionName + debugSuffix
+            prettyPrint()
+        }
+    }
+}
