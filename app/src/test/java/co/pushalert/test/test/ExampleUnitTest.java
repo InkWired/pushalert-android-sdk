@@ -1,4 +1,4 @@
-package com.pushalert.test;
+package co.pushalert.test.test;
 
 import org.junit.Test;
 

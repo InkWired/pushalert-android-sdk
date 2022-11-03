@@ -1,15 +1,17 @@
 plugins {
     id 'com.android.application'
+
+    id 'com.google.gms.google-services'
 }
 
 android {
-    namespace 'com.pushalert.test'
-    compileSdk 32
+    namespace 'co.pushalert.test'
+    compileSdk 33
 
     defaultConfig {
-        applicationId "com.pushalert.test"
+        applicationId "co.pushalert.test"
         minSdk 26
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 

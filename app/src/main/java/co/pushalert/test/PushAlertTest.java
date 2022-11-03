@@ -1,4 +1,4 @@
-package com.pushalert.test;
+package co.pushalert.test;
 
 import android.app.Application;
 import android.os.Build;
@@ -13,7 +13,8 @@ public class PushAlertTest extends Application {
         super.onCreate();
 
         //PushAlert Initialization
-        PushAlert.init("YOUR_APP_ID", getApplicationContext())
+        PushAlert.enableDebug(true);
+        PushAlert.init("wfvet5v6-2caef9-9ae0", getApplicationContext())
                 .enableFirebaseEventReporting(true)
                 .setOnSubscribeListener(new PASubscribe() {
                     @Override
