@@ -2,8 +2,8 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 class Global {
-    static def POM_NAME = 'PushAlert'
-    static def POM_ARTIFACT_ID = 'PushAlert'
+    static def POM_NAME = 'android-sdk'
+    static def POM_ARTIFACT_ID = 'android-sdk'
     static def POM_PACKAGING = 'aar'
     static def VERSION_NAME = '0.0.9'
 
@@ -16,8 +16,8 @@ class Global {
     static def POM_LICENCE_NAME = 'MIT License'
     static def POM_LICENCE_URL = 'https://raw.githubusercontent.com/InkWired/pushalert-android-sdk/master/LICENSE'
     static def POM_LICENCE_DIST = 'repo'
-    static def POM_DEVELOPER_ID = 'PushAlert'
-    static def POM_DEVELOPER_NAME = 'Mohit Kuldeep'
+    static def POM_DEVELOPER_ID = 'InkWired'
+    static def POM_DEVELOPER_NAME = 'InkWired'
     //static def SNAPSHOT_REPOSITORY_URL = 'https://oss.sonatype.org/content/repositories/snapshots'
     static def RELEASE_REPOSITORY_URL = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
 }
