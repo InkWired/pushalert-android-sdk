@@ -892,6 +892,7 @@ public class PushAlert {
                     postDataParams.put("pa_id", pushalert_info[1]);
                     postDataParams.put("domain_id", pushalert_info[2]);
                     postDataParams.put("host", pushalert_info[0]);
+                    postDataParams.put("packageName", context.getPackageName());
                     postDataParams.put("endpoint", reg_id);
                     postDataParams.put("type", context.getResources().getBoolean(R.bool.isTablet)?"tablet":"mobile");
                     postDataParams.put("browser", "chrome");

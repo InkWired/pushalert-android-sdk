@@ -19,7 +19,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 /**
- * Optin dialog class, here all the events are handles while user try to subscribe for Push Notifications
+ * Optin dialog class, all events relating to users trying to subscribe for Push Notifications are handled here.
  * @author Mohit Kuldeep
  * @since 02-11-2022
  */

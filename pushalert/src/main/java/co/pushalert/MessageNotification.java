@@ -99,8 +99,8 @@ public class MessageNotification {
         String channel = notification.getChannel();
         channel = (channel==null || channel.compareToIgnoreCase("")==0)?NOTIFICATION_CHANNEL:channel;
 
-        Map<String, String> attr_text = new HashMap<String, String>();
-        Map<String, String> no_attr_text = new HashMap<String, String>();
+        Map<String, String> attr_text = new HashMap<>();
+        Map<String, String> no_attr_text = new HashMap<>();
         if(ticker_attr!=null) {
             //ticker = Helper.processAttributes(context, ticker_attr, ticker);
             attr_text.put("ticker", ticker_attr);
@@ -547,7 +547,7 @@ public class MessageNotification {
 
 
     /**
-     * Callback the we received the notification
+     * To retrieve large icon and big picture (image) from the received notification
      */
     private static class receiveNotification extends AsyncTask<Void, Void, String> {
 
