@@ -27,7 +27,6 @@ public class MessagingService extends FirebaseMessagingService {
         if (remoteMessage.getData().size() > 0) {
 
             Map<String, String> map = remoteMessage.getData();
-            //LogM.d("Data: " + map); //ToDo remove in final version
 
             String notification_type = map.get("ntype");
 

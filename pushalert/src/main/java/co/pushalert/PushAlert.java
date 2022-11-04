@@ -976,7 +976,7 @@ public class PushAlert {
                                 }
                             }
 
-                            //Welcome Notification ToDo
+                            //Welcome Notification
                             if(action.compareToIgnoreCase("subscribe")==0){
                                 if(reader.has("welcome_enable") && reader.getBoolean("welcome_enable")){
                                     if(reader.has("welcome_data")){
@@ -2007,8 +2007,6 @@ public class PushAlert {
             boolean condition1 = PushAlert.getUserPrivacyConsent();
             boolean condition2 = (currSubsID != null);
             boolean condition3 = (Helper.getSubscriptionStatus(mContext) == PA_SUBS_STATUS_DEFAULT);
-
-            //LogM.d("Condition1: " + condition1 + ", condition2: " + condition2 + ", condition3: " + condition3 + ", canUserSubscribe: " + canUserSubscribe(mContext)); //ToDo Remove
 
             if(!Helper.isAndroid13AndAbove() && PushAlert.mOptInMode == PAOptInMode.AUTO && (!condition1 || byPassCheck)){
                 PushAlert.mOptInMode = PAOptInMode.TWO_STEP;
