@@ -48,7 +48,7 @@ public class PermissionRequestActivity extends Activity {
             LogM.e("Empty intent string extra.");
         }
 
-        LogM.d("OptInMode: " + optInModeEnum.name() + ", mainOptInMode: " + PushAlert.mOptInMode.name()); //Todo Remove
+        //LogM.d("OptInMode: " + optInModeEnum.name() + ", mainOptInMode: " + PushAlert.mOptInMode.name()); //Todo Remove
 
         boolean shouldShowRequestPermission =  Helper.isAndroid13AndAbove() && ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS);
         if (optInModeEnum != PushAlert.PAOptInMode.MANUAL &&
@@ -74,7 +74,7 @@ public class PermissionRequestActivity extends Activity {
                                            String[] permissions, int[] grantResults) {
 
         if (requestCode == PushAlert.PUSHALERT_PERMISSION_REQUEST_POST_NOTIFICATIONS) {
-            LogM.d("PushAlertLogs", "Permission Status - " + (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)); //ToDo Remove
+            //LogM.d("PushAlertLogs", "Permission Status - " + (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)); //ToDo Remove
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                 if (permissionCallback != null) {
                     permissionCallback.onAccept();
@@ -182,9 +182,9 @@ public class PermissionRequestActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        LogM.d("onResumedCalled: " + onResumeCalled + ", PushAlert.resumedFromAppNotificationSettings: " +
+        /*LogM.d("onResumedCalled: " + onResumeCalled + ", PushAlert.resumedFromAppNotificationSettings: " +
                 PushAlert.resumedFromAppNotificationSettings + " && PushAlert.getOSNotificationPermissionState(): " +
-                PushAlert.getOSNotificationPermissionState(this)); //ToDo Remove
+                PushAlert.getOSNotificationPermissionState(this));*/ //ToDo Remove
 
         if(!onResumeCalled){
             onResumeCalled = true;

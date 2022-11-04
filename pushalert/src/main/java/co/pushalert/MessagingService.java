@@ -27,7 +27,7 @@ public class MessagingService extends FirebaseMessagingService {
         if (remoteMessage.getData().size() > 0) {
 
             Map<String, String> map = remoteMessage.getData();
-            LogM.d("Data: " + map); //ToDo remove in final version
+            //LogM.d("Data: " + map); //ToDo remove in final version
 
             String notification_type = map.get("ntype");
 
@@ -75,6 +75,14 @@ public class MessagingService extends FirebaseMessagingService {
                 try {
                     JSONObject data = new JSONObject(map.get("data"));
                     PushAlert.deleteGroup(this, data.getString("id"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else if(notification_type.compareToIgnoreCase("update_attribution_time")==0) {
+                try {
+                    JSONObject data = new JSONObject(map.get("data"));
+                    Helper.setAttributionTime(this, data.getLong("attribution_time"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

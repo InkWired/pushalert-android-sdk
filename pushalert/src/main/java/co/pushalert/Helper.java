@@ -45,11 +45,10 @@ class Helper {
     static String PREFERENCE_NAME = "_PA_PREFERENCE_";
     static String PREFERENCE_LAST_NOTIFICATION_RECEIVED = "PA_LAST_NOTIFICATION_RECEIVED";
     static String PREFERENCE_LAST_NOTIFICATION_CLICKED = "PA_LAST_NOTIFICATION_CLICKED";
+    static String PREFERENCE_ATTRIBUTION_TIME = "PA_PREFERENCE_ATTRIBUTION_TIME";
     static String EVENT_NOTIFICATION_RECEIVED = "pa_notification_received";
     static String EVENT_NOTIFICATION_CLICKED = "pa_notification_clicked";
     static String EVENT_NOTIFICATION_IMPACT = "pa_notification_impact";
-
-    static final long impact_time = 120000L;
 
     static String getPostDataString(JSONObject params) throws Exception {
 
@@ -366,7 +365,7 @@ class Helper {
             try {
                 JSONObject lastNotificationInfo = getLastReceivedNotificationInfo(context);
                 if (lastNotificationInfo != null) {
-                    if (lastNotificationInfo.getLong("time") >= System.currentTimeMillis() - impact_time) {
+                    if (lastNotificationInfo.getLong("time") >= System.currentTimeMillis() - getAttributionTime(context)) {
                         Helper.firebaseAnalyticsLogEvent(context, Helper.EVENT_NOTIFICATION_IMPACT, lastNotificationInfo.getString("notification_id"), lastNotificationInfo.getString("campaign"));
                     }
                     //removePreference(context, PREFERENCE_LAST_NOTIFICATION_RECEIVED);
@@ -375,6 +374,14 @@ class Helper {
                 LogM.e("Error while check for notification impact: " + e.getMessage());
             }
         }
+    }
+
+    static void setAttributionTime(Context context, long attribution_time){
+        setPreference(context, PREFERENCE_ATTRIBUTION_TIME, attribution_time);
+    }
+
+    static long getAttributionTime(Context context){
+        return getPreference(context, PREFERENCE_ATTRIBUTION_TIME, 86400000L);
     }
 
     //Preference Management
@@ -408,6 +415,11 @@ class Helper {
         return prefs.getBoolean(key, default_value);
     }
 
+    static long getPreference(Context context, String key, long default_value){
+        SharedPreferences prefs = getSharedPreferences(context);
+        return prefs.getLong(key, default_value);
+    }
+
     static void setPreference(Context context, String key, int value){
         SharedPreferences prefs = getSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
@@ -426,6 +438,13 @@ class Helper {
         SharedPreferences prefs = getSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(key, value);
+        editor.apply();
+    }
+
+    static void setPreference(Context context, String key, long value){
+        SharedPreferences prefs = getSharedPreferences(context);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong(key, value);
         editor.apply();
     }
 

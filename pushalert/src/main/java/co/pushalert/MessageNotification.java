@@ -314,7 +314,6 @@ public class MessageNotification {
         }
         builder.setSmallIcon(small_icon);
 
-        LogM.e("PushAlert.getDefaultAccentColor() - " + PushAlert.getDefaultAccentColor(context));
         //int accent_color = ContextCompat.getColor(context, PushAlert.getDefaultAccentColor());
         int accent_color = PushAlert.getDefaultAccentColor(context);
         if(notification.getAccentColor()!=null){

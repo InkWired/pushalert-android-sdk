@@ -553,7 +553,7 @@ public class PushAlert {
         try {
             JSONObject lastNotificationInfo = Helper.getLastReceivedNotificationInfo(mContext);
             if (lastNotificationInfo != null) {
-                if (lastNotificationInfo.getLong("time") >= System.currentTimeMillis() - 3600000L) { //ToDo
+                if (lastNotificationInfo.getLong("time") >= System.currentTimeMillis() - Helper.getAttributionTime(mContext)) {
                     return lastNotificationInfo.getInt("notification_id");
                 }
             }
@@ -950,6 +950,7 @@ public class PushAlert {
                             editor.putString(SUBSCRIBER_ID_PREF, reader.getString("subs_id"));
                             //editor.putBoolean(USER_SUBSCRIPTION_STATE, true);
                             editor.putInt(SUBSCRIPTION_STATUS_PREF, PA_SUBS_STATUS_SUBSCRIBED);
+                            editor.putLong(Helper.PREFERENCE_ATTRIBUTION_TIME, reader.getLong("attribution_time"));
 
                             editor.commit(); //commit is required
                             sendingSubsID = false;
@@ -980,7 +981,6 @@ public class PushAlert {
                                 if(reader.has("welcome_enable") && reader.getBoolean("welcome_enable")){
                                     if(reader.has("welcome_data")){
                                         JSONObject welcome_data = new JSONObject(reader.getString("welcome_data"));
-                                        LogM.e("welcome_data - " + welcome_data); //Todo remove
                                         Helper.processNotification(context, Helper.toMap(welcome_data), false);
                                     }
                                 }
@@ -1377,7 +1377,7 @@ public class PushAlert {
             if (reader != null) {
                 try {
                     if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i( "Abandoned action performed successfully: "+action);
+                        LogM.i( "AbandonedCart action performed successfully: "+action);
                     } else {
                         LogM.i("There was some issue while processing abandoned cart.");
                     }
@@ -2002,13 +2002,13 @@ public class PushAlert {
 
         public void build(boolean byPassCheck){
             String currSubsID = PushAlert.getSubscriberID();
-            LogM.i("PushAlert Subscriber ID: " + currSubsID);
+            //LogM.i("PushAlert Subscriber ID: " + currSubsID + ", attribution_time: " + Helper.getAttributionTime(mContext));
 
             boolean condition1 = PushAlert.getUserPrivacyConsent();
             boolean condition2 = (currSubsID != null);
             boolean condition3 = (Helper.getSubscriptionStatus(mContext) == PA_SUBS_STATUS_DEFAULT);
 
-            LogM.d("Condition1: " + condition1 + ", condition2: " + condition2 + ", condition3: " + condition3 + ", canUserSubscribe: " + canUserSubscribe(mContext)); //ToDo Remove
+            //LogM.d("Condition1: " + condition1 + ", condition2: " + condition2 + ", condition3: " + condition3 + ", canUserSubscribe: " + canUserSubscribe(mContext)); //ToDo Remove
 
             if(!Helper.isAndroid13AndAbove() && PushAlert.mOptInMode == PAOptInMode.AUTO && (!condition1 || byPassCheck)){
                 PushAlert.mOptInMode = PAOptInMode.TWO_STEP;
@@ -2017,20 +2017,19 @@ public class PushAlert {
             if (condition1 || condition2 || condition3 || byPassCheck) {
 
                 if(byPassCheck || canUserSubscribe(mContext)) {
-                    Log.e("PushAlertSDK", "Checking Android Version - " + Build.VERSION.SDK_INT);
+                    //LogM.e("PushAlertSDK", "Checking Android Version - " + Build.VERSION.SDK_INT);
 
                     if(currSubsID!=null && !PushAlert.getOSNotificationPermissionState(mContext) && !byPassCheck){
                         return; //User disabled notification by choice, respect privacy
                     }
                     else if ((currSubsID==null || (!PushAlert.getOSNotificationPermissionState(mContext) && byPassCheck)) &&
                                 (Helper.isAndroid13AndAbove() || mOptInMode == PAOptInMode.TWO_STEP) && !PushAlert.getOSNotificationPermissionState(mContext)) {
-                        Log.e("PushAlertSDK", "Two Step Opt In Mode - " + (mOptInMode == PAOptInMode.TWO_STEP));
+                        ///LogM.e("PushAlertSDK", "Two Step Opt In Mode - " + (mOptInMode == PAOptInMode.TWO_STEP));
                         requestPermissionActivity(mOptInMode);
                         return;
                     }
 
 
-                    LogM.e("PushAlertSDK", "Initializing firebase app - " + Helper.getFBAPIKey(mContext) +", " + Helper.getFBAppID(mContext) + ", " + Helper.getFBProjectID(mContext));
                     FirebaseApp.initializeApp(mContext);
                     fireBaseInitialized = true;
 
@@ -2078,14 +2077,14 @@ public class PushAlert {
             PermissionRequestActivity.registerAsCallback(new PermissionRequestActivity.PermissionCallback(){
                 @Override
                 public void onAccept() {
-                    Log.e("PushAlertSDK", "Permission Accepted");
+                    LogM.e("PushAlertSDK", "Permission Accepted");
                     PushAlert.setUserPrivacyConsent(true); //because we're taking consent
                     //build();
                 }
 
                 @Override
                 public void onReject() {
-                    Log.e("PushAlertSDK", "Permission rejected");
+                    LogM.e("PushAlertSDK", "Permission rejected");
                 }
             });
 
