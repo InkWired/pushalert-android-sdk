@@ -18,8 +18,9 @@ class Global {
     static def POM_LICENCE_DIST = 'repo'
     static def POM_DEVELOPER_ID = 'InkWired'
     static def POM_DEVELOPER_NAME = 'InkWired'
-    //static def SNAPSHOT_REPOSITORY_URL = 'https://oss.sonatype.org/content/repositories/snapshots'
-    static def RELEASE_REPOSITORY_URL = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+    static def POM_DEVELOPER_EMAIL = 'contactus@inkwired.com'
+    static def SNAPSHOT_REPOSITORY_URL = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+    static def RELEASE_REPOSITORY_URL = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
 }
 
 def getRepositoryUsername() {
@@ -42,12 +43,23 @@ afterEvaluate {
             }
         }
 
+        /*snapshotRepository {
+            maven {
+                url = Global.SNAPSHOT_REPOSITORY_URL
+                credentials {
+                    username = getRepositoryUsername()
+                    password = getRepositoryPassword()
+                }
+            }
+        }*/
+
         publications {
             release(MavenPublication) {
-                from components.release
+                //from components.release
                 groupId = Global.GROUP_ID
                 artifactId = Global.POM_ARTIFACT_ID
                 version = Global.VERSION_NAME
+                artifact bundleReleaseAar
 
                 pom {
                     name = Global.POM_NAME
@@ -73,6 +85,7 @@ afterEvaluate {
                         developer {
                             id = Global.POM_DEVELOPER_ID
                             name = Global.POM_DEVELOPER_NAME
+                            email = Global.POM_DEVELOPER_EMAIL
                         }
                     }
                 }
@@ -83,5 +96,6 @@ afterEvaluate {
     signing {
         required { true }
         sign publishing.publications.release
+        //sign configurations.archives
     }
 }
