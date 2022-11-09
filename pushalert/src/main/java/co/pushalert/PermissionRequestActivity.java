@@ -153,6 +153,10 @@ public class PermissionRequestActivity extends Activity {
                 if(!Helper.isAndroid13AndAbove()) {
                     openAppNotificationSettings = true;
                 }
+
+                //Required if target is not SDK 33
+                PushAlert.createDefaultChannel(PermissionRequestActivity.this);
+
                 pushAlertRequestPermission(PermissionRequestActivity.this);
                 permissionDialog.dismiss();
             } else {

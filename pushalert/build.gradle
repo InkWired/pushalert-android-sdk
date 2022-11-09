@@ -37,7 +37,7 @@ dependencies {
     api 'com.google.firebase:firebase-messaging'
     api 'com.google.firebase:firebase-analytics'
     api 'com.google.android.gms:play-services-location:21.0.0'
-    implementation 'androidx.appcompat:appcompat:1.5.1'
+    api 'androidx.appcompat:appcompat:1.5.1'
     api 'androidx.core:core:1.9.0'
 }
 

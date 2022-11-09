@@ -14,6 +14,8 @@ public class PushAlertTest extends Application {
 
         //PushAlert Initialization
         PushAlert.enableDebug(true);
+
+        //This is a sample App ID, register your app at https://pushalert.co to get your own App ID
         PushAlert.init("wfvet5v6-2caef9-9ae0", getApplicationContext())
                 .enableFirebaseEventReporting(true)
                 .setOnSubscribeListener(new PASubscribe() {

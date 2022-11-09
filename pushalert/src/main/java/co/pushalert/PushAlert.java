@@ -56,6 +56,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -134,28 +136,18 @@ public class PushAlert {
      * @param reqAppId  Your app id (get it from Dashboard->App)
      * @param context   Your application context
      */
-    public static PushAlert.InkWired init(String reqAppId, final Context context) throws NullPointerException{
+    public static PushAlert.InkWired init(String reqAppId, final Context context){
 
         PushAlert.setContext(context);
         PushAlert.setAppId(reqAppId);
 
         String pushalert_id = appId;
         if(pushalert_id==null){
-            throw new NullPointerException("Invalid app id: " +  reqAppId);
+            Log.e(LogM.TAG, "Invalid App ID - " + reqAppId);
         }
-        else if(pushalert_id.compareToIgnoreCase("test-0-0")==0){
-            throw new NullPointerException("PushAlert ID is not defined.");
-        }
-
-        //Default channel for oreo and above
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL,
-                    NOTIFICATION_CHANNEL_TITLE, NotificationManager.IMPORTANCE_DEFAULT);
-            final NotificationManager notificationManager=
-                    (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
+        else if(pushalert_id.compareToIgnoreCase("test-0-0")==0 ||
+                pushalert_id.equals("wfvet5v6-2caef9-9ae0")){
+            Log.e(LogM.TAG, "Invalid App ID. It seems you're using a test App ID.");
         }
 
         instance = new PushAlert.InkWired(context);
@@ -174,6 +166,13 @@ public class PushAlert {
         if (reqAppId == null || reqAppId.isEmpty()) {
             LogM.e("setAppId called with invalid id.");
             return;
+        }
+        else{
+            Pattern pattern = Pattern.compile("^([a-zA-Z0-9]{8})-([0-9a-fA-F]{6})-([0-9a-fA-F]{4})$");
+            Matcher matcher = pattern.matcher(reqAppId);
+            if(!matcher.find()){
+                return;
+            }
         }
 
         appId = reqAppId;
@@ -300,6 +299,19 @@ public class PushAlert {
             LogM.i("Added remote attributes");
         } catch (Exception e) {
             LogM.e("Error while adding remote attribute: " + e.getMessage());
+        }
+    }
+
+    static void createDefaultChannel(Context context){
+        //Default channel for oreo and above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL,
+                    NOTIFICATION_CHANNEL_TITLE, NotificationManager.IMPORTANCE_DEFAULT);
+            final NotificationManager notificationManager=
+                    (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
         }
     }
 
@@ -967,6 +979,7 @@ public class PushAlert {
                                 }
                             }
 
+                            PushAlert.createDefaultChannel(context);
                             if(reader.has("channels")){
                                 JSONArray channels = reader.getJSONArray("channels");
                                 for(int i=0;i<channels.length();i++){
@@ -990,7 +1003,13 @@ public class PushAlert {
                         setAppVersionInit(context);
 
                     } else {
-                        LogM.i("Issue while managing subscriber");
+                        if(reader.has("error") && reader.getString("error").equals("InvalidAppID")){
+                            LogM.e(reader.getString("msg"));
+                        }
+                        else{
+                            LogM.i("Issue while managing subscriber");
+                        }
+
                     }
 
                 } catch (Exception e) {
@@ -2028,7 +2047,16 @@ public class PushAlert {
                     }
 
 
-                    FirebaseApp.initializeApp(mContext);
+                    try {
+                        FirebaseApp.initializeApp(mContext);
+                    }
+                    catch(NoClassDefFoundError e){
+                        //It means Firebase is not added properly
+                        //e.printStackTrace();
+                        Log.e(LogM.TAG, "Error occurred while initializing (ERR-PA9001): Its seems dependencies are missing. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
+                        return;
+                    }
+
                     fireBaseInitialized = true;
 
 
@@ -2057,7 +2085,10 @@ public class PushAlert {
                             setAppVersionInit(mContext);
                         }
                     } catch (Exception e) {
-                        LogM.e("Error while initiating: " + e.getMessage());
+                        //e.printStackTrace();
+                        LogM.e("Error occurred while initializing (ERR-PA9002): Either google-services.json is missing or com.google.gms:google-services was not applied to your gradle project. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
+
+                        return;
                     }
 
 
@@ -2251,6 +2282,7 @@ public class PushAlert {
             return getInstance();
         }
 
+        @SuppressLint("MissingPermission")
         private void buildGoogleApiClient() {
             LocationRequest mLocationRequest = LocationRequest.create()
                     .setInterval(UPDATE_INTERVAL)

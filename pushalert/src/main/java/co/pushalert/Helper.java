@@ -608,4 +608,15 @@ class Helper {
         return "";
     }
 
+    static int getTargetSDKVersion(Context context){
+        try {
+            return context.getApplicationInfo().targetSdkVersion;
+        }
+        catch(Exception ignored){
+
+        }
+
+        return -1;
+    }
+
 }

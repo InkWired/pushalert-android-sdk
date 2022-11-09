@@ -9,7 +9,7 @@ import android.util.Log;
  */
 class LogM {
 
-    private  static final String TAG = "PALogs";
+    static final String TAG = "PALogs";
     private static boolean ENABLE_DEBUG = false;
 
     /**
