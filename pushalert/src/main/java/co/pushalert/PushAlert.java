@@ -306,7 +306,7 @@ public class PushAlert {
         //Default channel for oreo and above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL,
-                    NOTIFICATION_CHANNEL_TITLE, NotificationManager.IMPORTANCE_DEFAULT);
+                    NOTIFICATION_CHANNEL_TITLE, NotificationManager.IMPORTANCE_HIGH);
             final NotificationManager notificationManager=
                     (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (notificationManager != null) {

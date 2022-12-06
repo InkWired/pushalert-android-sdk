@@ -477,6 +477,7 @@ class Helper {
         //Client preference
         boolean showNotificationSettings = (isAppInBg || (PushAlert.mInAppBehaviour == PushAlert.PAInAppBehaviour.NOTIFICATION));
 
+        LogM.e("PALogs", map.toString());
         PANotification notification = new PANotification(
                 map.get("id"), map.get("short_title"), map.get("content"), map.get("url"), map.get("icon"), map.get("image"), map.get("sent_time"),
                 map.get("channel"), map.get("sound_res"), map.get("led_color"), map.get("lock_screen_visibility"), map.get("accent_color"),
@@ -489,7 +490,7 @@ class Helper {
                 map.get("action2_title_attr"), map.get("action2_url_attr"),
                 map.get("action3_title_attr"), map.get("action3_url_attr"),
                 map.get("type"), map.get("extraData"), map.get("ref_id"),
-                map.get("template_id"), map.get("template"), map.get("header_text")
+                map.get("campaign_id"), map.get("campaign"), map.get("header_text"), map.get("template_id")
         );
 
         String bgData = null;

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/template2_padding"
+    android:background="@color/notification_template2_bg">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/template2_height"
+        tools:ignore="UselessParent">
+
+        <ImageView
+            android:id="@+id/notification_large_image"
+            android:src="@android:color/transparent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            tools:ignore="ContentDescription" />
+    </FrameLayout>
+
+</RelativeLayout>

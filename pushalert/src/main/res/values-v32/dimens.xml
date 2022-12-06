@@ -1,0 +1,8 @@
+<resources>
+    <dimen name="template1_padding">0dp</dimen>
+    <dimen name="template1_title_margin_start">0dp</dimen>
+    <dimen name="template1_title_margin_end">8dp</dimen>
+    <dimen name="template1_expanded_height">180dp</dimen>
+    <dimen name="template1_padding_top">0dp</dimen>
+    <dimen name="template1_padding_bottom">0dp</dimen>
+</resources>

@@ -10,8 +10,8 @@ import org.json.JSONObject;
 public class PANotification {
     private int id, group_id=-1,ref_id;
     private String short_title, content, image, url, icon, channel, sound_res, led_color, accent_color, small_icon_res, group_key, lock_screen_visibility, priority;
-    private int local_notf_id=-1, sent_time = 0, template_id=0;
-    private String short_title_attr, content_attr, url_attr, template, header_text;
+    private int local_notf_id=-1, sent_time = 0, template_id=0, campaign_id=0;
+    private String short_title_attr, content_attr, url_attr, campaign, header_text;
 
     private String action1_title, action1_url, action1_icon_res, action1_id;
     private String action2_title, action2_url, action2_icon_res, action2_id;
@@ -65,7 +65,7 @@ public class PANotification {
                           String action1_title_attr, String action1_url_attr,
                           String action2_title_attr, String action2_url_attr,
                           String action3_title_attr, String action3_url_attr,
-                          String type, String extraData, String ref_id, String template_id, String template, String header_text){
+                          String type, String extraData, String ref_id, String campaign_id, String campaign, String header_text, String template_id){
         this.id = Integer.parseInt(id);
         this.short_title = short_title;
         this.content = content;
@@ -149,12 +149,20 @@ public class PANotification {
         if(template_id!=null) {
             try{
                 this.template_id = Integer.parseInt(template_id);
-                this.template = template;
+
             }
             catch (Exception ignored){}
         }
 
         this.header_text = header_text;
+
+        if(campaign_id!=null) {
+            try{
+                this.campaign_id = Integer.parseInt(campaign_id);
+                this.campaign = campaign;
+            }
+            catch (Exception ignored){}
+        }
     }
 
 
@@ -457,8 +465,12 @@ public class PANotification {
         this.ref_id = ref_id;
     }
 
-    public String getTemplate() {
-        return template;
+    public String getCampaign() {
+        return campaign;
+    }
+
+    public int getCampaignId() {
+        return campaign_id;
     }
 
     public int getTemplateId() {

@@ -12,5 +12,9 @@
     <color name="pa_optin_reject_btn_color">#1a73e8</color>
     <color name="pa_optin_reject_btn_bg_color">@android:color/transparent</color>
 
+    <color name="notification_template1_bg">#00ffffff</color>
+
+    <color name="notification_template2_bg">#00ffffff</color>
+
 
 </resources>

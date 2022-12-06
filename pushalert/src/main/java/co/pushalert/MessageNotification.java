@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.Settings;
+import android.widget.RemoteViews;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -28,6 +29,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -231,7 +235,7 @@ public class MessageNotification {
         intent.putExtra("extraData", notification.getExtraData().toString());
 
         intent.putExtra("notification_id", notification.getId());
-        intent.putExtra("campaign", (notification.getTemplateId()>0)?(notification.getTemplate() + " ("+notification.getTemplateId()+")"):"None");
+        intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
         intent.putExtra("is_action", false);
         intent.putExtra("uid", uid);
         intent.putExtra("type", notification.getType());
@@ -261,6 +265,35 @@ public class MessageNotification {
                 // Automatically dismiss the notification when it is touched.*/
                 .setAutoCancel(true);
 
+
+        int template_id = notification.getTemplateId();
+        boolean customNotification = template_id>0;
+        RemoteViews collapsedView = null, expandedView = null;
+        if(customNotification){
+            if(template_id==2) {
+                collapsedView = new RemoteViews(context.getPackageName(), R.layout.notification_template2);
+                expandedView = new RemoteViews(context.getPackageName(), R.layout.notification_template2_expand);
+            }
+            else{
+                collapsedView = new RemoteViews(context.getPackageName(), R.layout.notification_template1);
+                expandedView = new RemoteViews(context.getPackageName(), R.layout.notification_template1_expand);
+
+                if(Build.VERSION.SDK_INT<32){
+                    builder.setShowWhen(false);
+                }
+            }
+
+            collapsedView.setTextViewText(R.id.notification_message, content_text);
+            expandedView.setTextViewText(R.id.notification_message, content_text);
+
+
+            Date date = new Date(notification.getSentTime()*1000L);
+            //DateFormat dateFormat = new SimpleDateFormat("hh:mm a");
+            DateFormat dateFormat = SimpleDateFormat
+                    .getTimeInstance(SimpleDateFormat.SHORT);
+            collapsedView.setTextViewText(R.id.notification_time, dateFormat.format(date));
+            expandedView.setTextViewText(R.id.notification_time, dateFormat.format(date));
+        }
 
         String ledColor = notification.getLEDColor();
 
@@ -327,15 +360,27 @@ public class MessageNotification {
         builder.setColor(accent_color);
 
         if(largeIcon!=null){
-            builder.setLargeIcon(largeIcon);
+            if(customNotification){
+                collapsedView.setImageViewBitmap(R.id.notification_large_icon, largeIcon);
+                expandedView.setImageViewBitmap(R.id.notification_large_icon, largeIcon);
+            }
+            else{
+                builder.setLargeIcon(largeIcon);
+            }
         }
 
         if(largeImage!=null){
-            builder.setStyle(
-                    new NotificationCompat.BigPictureStyle().bigPicture(largeImage)
-                            .setSummaryText(content_text)
-                            .setBigContentTitle(title)
-            );
+            if(customNotification) {
+                collapsedView.setImageViewBitmap(R.id.notification_large_image, largeImage);
+                expandedView.setImageViewBitmap(R.id.notification_large_image, largeImage);
+            }
+            else{
+                builder.setStyle(
+                        new NotificationCompat.BigPictureStyle().bigPicture(largeImage)
+                                .setSummaryText(content_text)
+                                .setBigContentTitle(title)
+                );
+            }
         }
         else{
             builder.setStyle(new NotificationCompat.BigTextStyle().bigText(content_text));
@@ -384,7 +429,7 @@ public class MessageNotification {
             action1_intent.putExtra("url", action1_url);
             action1_intent.putExtra("extraData", notification.getExtraData().toString());
             action1_intent.putExtra("notification_id", notification.getId());
-            action1_intent.putExtra("campaign", (notification.getTemplateId()>0)?(notification.getTemplate() + " ("+notification.getTemplateId()+")"):"None");
+            action1_intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
             action1_intent.putExtra("is_action", true);
             action1_intent.putExtra("uid", uid);
             action1_intent.putExtra("clicked_on", 1);
@@ -419,7 +464,7 @@ public class MessageNotification {
             action2_intent.putExtra("url", action2_url);
             action2_intent.putExtra("extraData", notification.getExtraData().toString());
             action2_intent.putExtra("notification_id", notification.getId());
-            action2_intent.putExtra("campaign", (notification.getTemplateId()>0)?(notification.getTemplate() + " ("+notification.getTemplateId()+")"):"None");
+            action2_intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
             action2_intent.putExtra("is_action", true);
             action2_intent.putExtra("uid", uid);
             action2_intent.putExtra("clicked_on", 2);
@@ -454,7 +499,7 @@ public class MessageNotification {
             action3_intent.putExtra("url", action3_url);
             action3_intent.putExtra("extraData", notification.getExtraData().toString());
             action3_intent.putExtra("notification_id", notification.getId());
-            action3_intent.putExtra("campaign", (notification.getTemplateId()>0)?(notification.getTemplate() + " ("+notification.getTemplateId()+")"):"None");
+            action3_intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
             action3_intent.putExtra("is_action", true);
             action3_intent.putExtra("uid", uid);
             action3_intent.putExtra("clicked_on", 3);
@@ -484,6 +529,16 @@ public class MessageNotification {
                 builder.setGroup(notification.getGroupKey());
             }
         }*/
+
+        if(customNotification){
+            if (Build.VERSION.SDK_INT >= 31) {
+                builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+            }
+
+            builder.setCustomContentView(collapsedView);
+            builder.setCustomBigContentView(expandedView);
+            builder.setCustomHeadsUpContentView(collapsedView);
+        }
 
 
         if (notification.getGroupKey() != null && notification.getGroupId() != 0) {
