@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="pa_default_accent_color">#ff0d82e5</color>
+
     <color name="pa_optin_bg_color">#FFFFFF</color>
 
     <color name="pa_optin_title_color">#000000</color>

@@ -20,6 +20,7 @@ import android.widget.RemoteViews;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONObject;
 
@@ -64,6 +65,7 @@ public class MessageNotification {
                                   PANotification notification){
         new receiveNotification(context, notification).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
+
     static void notify(final Context context,
                               PANotification notification, Bitmap largeIcon, Bitmap largeImage, String uid) {
 
@@ -278,7 +280,7 @@ public class MessageNotification {
                 collapsedView = new RemoteViews(context.getPackageName(), R.layout.notification_template1);
                 expandedView = new RemoteViews(context.getPackageName(), R.layout.notification_template1_expand);
 
-                if(Build.VERSION.SDK_INT<32){
+                if(Build.VERSION.SDK_INT<31){
                     builder.setShowWhen(false);
                 }
             }
@@ -347,8 +349,7 @@ public class MessageNotification {
         }
         builder.setSmallIcon(small_icon);
 
-        //int accent_color = ContextCompat.getColor(context, PushAlert.getDefaultAccentColor());
-        int accent_color = PushAlert.getDefaultAccentColor(context);
+        int accent_color = ContextCompat.getColor(context, PushAlert.getDefaultAccentColor(context));
         if(notification.getAccentColor()!=null){
             try {
                 accent_color = Color.parseColor(notification.getAccentColor());
@@ -368,6 +369,25 @@ public class MessageNotification {
                 builder.setLargeIcon(largeIcon);
             }
         }
+        else{
+            String largeIconRes = notification.getIcon();
+            if(largeIconRes!=null){
+                try {
+                    int tmp_large_icon = context.getResources().getIdentifier(largeIconRes, "drawable", context.getPackageName());
+                    if(customNotification){
+                        collapsedView.setImageViewResource(R.id.notification_large_icon, tmp_large_icon);
+                        expandedView.setImageViewResource(R.id.notification_large_icon, tmp_large_icon);
+                    }
+                    else{
+
+                        builder.setLargeIcon(Helper.getBitmap(context, tmp_large_icon));
+                    }
+                }
+                catch (Exception e){
+                    LogM.e("Error while getting large icon res: " + e.getMessage());
+                }
+            }
+        }
 
         if(largeImage!=null){
             if(customNotification) {
@@ -383,7 +403,30 @@ public class MessageNotification {
             }
         }
         else{
-            builder.setStyle(new NotificationCompat.BigTextStyle().bigText(content_text));
+            String largeImageRes = notification.getImage();
+            if(largeImageRes!=null){
+                try {
+                    int tmp_large_image = context.getResources().getIdentifier(largeImageRes, "drawable", context.getPackageName());
+                    if(customNotification) {
+                        collapsedView.setImageViewResource(R.id.notification_large_image, tmp_large_image);
+                        expandedView.setImageViewResource(R.id.notification_large_image, tmp_large_image);
+                    }
+                    else{
+                        builder.setStyle(
+                                new NotificationCompat.BigPictureStyle().bigPicture(Helper.getBitmap(context, tmp_large_image))
+                                        .setSummaryText(content_text)
+                                        .setBigContentTitle(title)
+                        );
+                    }
+                }
+                catch (Exception e){
+                    builder.setStyle(new NotificationCompat.BigTextStyle().bigText(content_text));
+                    LogM.e("Error while getting large image res: " + e.getMessage());
+                }
+            }
+            else {
+                builder.setStyle(new NotificationCompat.BigTextStyle().bigText(content_text));
+            }
         }
 
         int priority = NotificationCompat.PRIORITY_DEFAULT;
@@ -619,7 +662,7 @@ public class MessageNotification {
         @Override
         protected String doInBackground(Void... params) {
             String icon = notification.getIcon();
-            if (icon!=null && !icon.equalsIgnoreCase("")) {
+            if (icon!=null && icon.toLowerCase().startsWith("https://")) {
                 InputStream in;
                 try {
                     URL url = new URL(icon);
@@ -636,7 +679,7 @@ public class MessageNotification {
             }
 
             String image = notification.getImage();
-            if(image!=null && !image.equalsIgnoreCase("")) {
+            if(image!=null && image.toLowerCase().startsWith("https://")) {
                 InputStream in;
                 try {
                     URL url = new URL(image);

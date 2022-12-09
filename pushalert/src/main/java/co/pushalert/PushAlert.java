@@ -277,7 +277,7 @@ public class PushAlert {
     }
 
     static int getDefaultAccentColor(Context context){
-        return Helper.getPreference(context, PA_DEFAULT_ACCENT_COLOR, NotificationCompat.COLOR_DEFAULT);
+        return Helper.getPreference(context, PA_DEFAULT_ACCENT_COLOR, R.color.pa_default_accent_color);
     }
 
     static TwoStepHelper getTwoStepCustomization(){

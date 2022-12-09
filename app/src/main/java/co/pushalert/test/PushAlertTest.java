@@ -18,6 +18,7 @@ public class PushAlertTest extends Application {
         //This is a sample App ID, register your app at https://pushalert.co to get your own App ID
         PushAlert.init("wfvet5v6-2caef9-9ae0", getApplicationContext())
                 .enableFirebaseEventReporting(true)
+                .setDefaultAccentColor(R.color.teal_200)
                 .setOnSubscribeListener(new PASubscribe() {
                     @Override
                     public void onSubscribe(String s) {

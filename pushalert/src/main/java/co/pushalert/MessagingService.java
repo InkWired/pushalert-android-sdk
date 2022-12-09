@@ -27,7 +27,6 @@ public class MessagingService extends FirebaseMessagingService {
         if (remoteMessage.getData().size() > 0) {
 
             Map<String, String> map = remoteMessage.getData();
-
             String notification_type = map.get("ntype");
 
             if(notification_type==null || notification_type.compareToIgnoreCase("notification")==0) {

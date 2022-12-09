@@ -5,7 +5,7 @@ class Global {
     static def POM_NAME = 'android-sdk'
     static def POM_ARTIFACT_ID = 'android-sdk'
     static def POM_PACKAGING = 'aar'
-    static def VERSION_NAME = '0.0.93'
+    static def VERSION_NAME = '0.0.94'
 
     static def GROUP_ID = 'co.pushalert'
     static def POM_DESCRIPTION = 'PushAlert Android SDK'
