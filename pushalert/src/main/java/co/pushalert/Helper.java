@@ -9,8 +9,16 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -81,59 +89,79 @@ class Helper {
         return result.toString();
     }
 
-    static String connectWithPushAlert(String url, JSONObject finalParams, boolean authorization){
-        try {
-            String finalData = getPostDataString(finalParams);
+    static String connectWithPushAlert(String url, JSONObject finalParams, String method, boolean authorization){
+        int retry_count = 0;
+        int retry_allowed = 3;
+        boolean add_delay = false;
+        long delay = 2500L;
 
-            byte[] finalParamsByte;
-            finalParamsByte = finalData.getBytes(StandardCharsets.UTF_8);
-
-            URL urlObj = new URL(url);
-            HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
-            conn.setRequestMethod("POST");
-            if(authorization){
-                conn.setRequestProperty("Authorization",  "pushalert_id="+ appId);
-            }
-            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            conn.setRequestProperty("charset", "utf-8");
-            conn.setRequestProperty("Content-Length", Integer.toString(finalParamsByte.length));
-
-            conn.setReadTimeout(10000);
-            conn.setConnectTimeout(15000);
-
-
-            DataOutputStream dataOutputStream = new DataOutputStream(conn.getOutputStream());
-            dataOutputStream.write(finalParamsByte);
-
-            dataOutputStream.flush();
-            dataOutputStream.close();
-
-            int responseCode=conn.getResponseCode();
-            if (responseCode == HttpsURLConnection.HTTP_OK) {
-                StringBuffer result = new StringBuffer();
-                String line;
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
+        while(retry_count<retry_allowed) {
+            try {
+                if(add_delay){
+                    try {
+                        Thread.sleep(delay);
+                        delay = delay + 2500L;
+                    } catch (InterruptedException ignored) {
+                    }
+                    LogM.e("Retrying url connection - " + retry_count);
                 }
-                String encrypted_result = result.toString();
-                if (encrypted_result.compareToIgnoreCase("")==0) {
-                    return  null;
+
+                URL urlObj = new URL(url);
+                HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+
+                conn.setUseCaches(false);
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(10000);
+
+                if (method.equalsIgnoreCase("post")) {
+                    String finalData = getPostDataString(finalParams);
+
+                    byte[] finalParamsByte;
+                    finalParamsByte = finalData.getBytes(StandardCharsets.UTF_8);
+
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+                    conn.setRequestMethod("POST");
+                    if (authorization) {
+                        conn.setRequestProperty("Authorization", "pushalert_id=" + appId);
+                    }
+                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                    conn.setRequestProperty("charset", "utf-8");
+                    conn.setRequestProperty("Content-Length", Integer.toString(finalParamsByte.length));
+
+                    DataOutputStream dataOutputStream = new DataOutputStream(conn.getOutputStream());
+                    dataOutputStream.write(finalParamsByte);
+
+                    dataOutputStream.flush();
+                    dataOutputStream.close();
                 }
-                else {
-                    return result.toString();
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode == HttpsURLConnection.HTTP_OK) {
+                    StringBuffer result = new StringBuffer();
+                    String line;
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    String encrypted_result = result.toString();
+                    if (encrypted_result.compareToIgnoreCase("") == 0) {
+                        return null;
+                    } else {
+                        return result.toString();
+                    }
                 }
-            }
-            else {
-                return null;
+
+                conn.disconnect();
+
+            } catch (Exception e) {
+                LogM.e("Not able to connect with PushAlert: " + e.getMessage());
             }
 
+            add_delay = true;
+            retry_count++;
         }
-        catch (Exception e) {
-            LogM.e("Not able to connect with PushAlert: " + e.getMessage());
-        }
+
         return null;
     }
 
@@ -649,4 +677,58 @@ class Helper {
         return bitmap;
     }
 
+    public static Bitmap getRoundedCornerBitmap(Bitmap bitmap, int dp) {
+
+        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(output);
+
+        //Setting paint and rectangles.
+        final int color = Color.BLACK;
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+        final RectF rectF = new RectF(rect);
+        int pixels = Math.round(10 * Resources.getSystem().getDisplayMetrics().density);
+        final float roundPx = pixels;
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(color);
+        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
+
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+
+        return output;
+    }
+
+    public static Bitmap getBitmapFromURL(String url) {
+        //Retry is required because device just wake up from sleep
+        int retry_count = 0;
+        int retry_allowed = 3;
+        boolean add_delay = false;
+        long delay = 2500L;
+
+        while(retry_count<retry_allowed) {
+            try {
+                if (add_delay) {
+                    try {
+                        Thread.sleep(delay);
+                        delay = delay + 2500L;
+                    } catch (InterruptedException ignored) {
+                    }
+                    LogM.e("Retrying getBitmapFromURL connection - " + retry_count);
+                }
+                return BitmapFactory.decodeStream(new URL(url).openConnection().getInputStream());
+            } catch (Exception e) {
+                LogM.e("Issue while getting bitmap from url - " + e.getMessage());
+            }
+
+            add_delay = true;
+            retry_count++;
+        }
+
+        return null;
+    }
 }

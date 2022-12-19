@@ -2,12 +2,14 @@
     <bool name="isTablet">false</bool>
 
     <dimen name="template1_padding">15dp</dimen>
-    <dimen name="template1_padding_top">15dp</dimen>
-    <dimen name="template1_padding_bottom">15dp</dimen>
-    <dimen name="template1_title_margin_start">8dp</dimen>
+    <dimen name="template1_padding_top">12dp</dimen>
+    <dimen name="template1_padding_bottom">12dp</dimen>
+    <dimen name="template1_title_margin_start">12dp</dimen>
     <dimen name="template1_title_margin_end">8dp</dimen>
-    <dimen name="template1_expanded_height">240dp</dimen>
+    <dimen name="template1_expanded_height">200dp</dimen>
 
     <dimen name="template2_padding">0dp</dimen>
     <dimen name="template2_height">64dp</dimen>
+    <dimen name="template1_expanded_padding_top">0dp</dimen>
+    <dimen name="template1_expanded_padding_bottom">0dp</dimen>
 </resources>

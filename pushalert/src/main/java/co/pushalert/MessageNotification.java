@@ -16,6 +16,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.TypedValue;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import androidx.core.app.NotificationCompat;
@@ -63,7 +65,21 @@ public class MessageNotification {
      */
     static void notifyInit(final Context context,
                                   PANotification notification){
-        new receiveNotification(context, notification).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        //new receiveNotification(context, notification).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+        Bitmap largeIcon = null, largeImage = null;
+
+        String icon = notification.getIcon();
+        if (icon!=null && icon.toLowerCase().startsWith("https://")) {
+            largeIcon = Helper.getBitmapFromURL(icon);
+        }
+
+        String image = notification.getImage();
+        if(image!=null && image.toLowerCase().startsWith("https://")) {
+            largeImage = Helper.getBitmapFromURL(image);
+        }
+
+        notify(context, notification, largeIcon, largeImage,null);
     }
 
     static void notify(final Context context,
@@ -282,6 +298,8 @@ public class MessageNotification {
 
                 if(Build.VERSION.SDK_INT<31){
                     builder.setShowWhen(false);
+                    expandedView.setViewVisibility(R.id.notification_large_icon, View.VISIBLE);
+                    expandedView.setViewVisibility(R.id.notification_time, View.VISIBLE);
                 }
             }
 
@@ -361,6 +379,7 @@ public class MessageNotification {
         builder.setColor(accent_color);
 
         if(largeIcon!=null){
+            largeIcon = Helper.getRoundedCornerBitmap(largeIcon, 5);
             if(customNotification){
                 collapsedView.setImageViewBitmap(R.id.notification_large_icon, largeIcon);
                 expandedView.setImageViewBitmap(R.id.notification_large_icon, largeIcon);
@@ -371,21 +390,36 @@ public class MessageNotification {
         }
         else{
             String largeIconRes = notification.getIcon();
-            if(largeIconRes!=null){
+            if(largeIconRes!=null && !largeIconRes.equals("")){
                 try {
                     int tmp_large_icon = context.getResources().getIdentifier(largeIconRes, "drawable", context.getPackageName());
+                    Bitmap b = Helper.getBitmap(context, tmp_large_icon);
                     if(customNotification){
-                        collapsedView.setImageViewResource(R.id.notification_large_icon, tmp_large_icon);
-                        expandedView.setImageViewResource(R.id.notification_large_icon, tmp_large_icon);
+                        b = Helper.getRoundedCornerBitmap(b, 5);
+                        collapsedView.setImageViewBitmap(R.id.notification_large_icon, b);
+                        expandedView.setImageViewBitmap(R.id.notification_large_icon, b);
                     }
                     else{
 
-                        builder.setLargeIcon(Helper.getBitmap(context, tmp_large_icon));
+                        builder.setLargeIcon(b);
                     }
                 }
                 catch (Exception e){
                     LogM.e("Error while getting large icon res: " + e.getMessage());
                 }
+            }
+            else{
+
+                if(customNotification) {
+                    collapsedView.setViewVisibility(R.id.notification_large_icon, View.GONE);
+                    expandedView.setViewVisibility(R.id.notification_large_icon, View.GONE);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (template_id == 1) {
+                            collapsedView.setViewLayoutMargin(R.id.notification_message, RemoteViews.MARGIN_END, 0, TypedValue.COMPLEX_UNIT_DIP);
+                        }
+                    }
+                }
+
             }
         }
 
@@ -404,16 +438,19 @@ public class MessageNotification {
         }
         else{
             String largeImageRes = notification.getImage();
-            if(largeImageRes!=null){
+            if(largeImageRes!=null && !largeImageRes.equals("")){
                 try {
                     int tmp_large_image = context.getResources().getIdentifier(largeImageRes, "drawable", context.getPackageName());
+
                     if(customNotification) {
                         collapsedView.setImageViewResource(R.id.notification_large_image, tmp_large_image);
                         expandedView.setImageViewResource(R.id.notification_large_image, tmp_large_image);
                     }
                     else{
+                        Bitmap b = Helper.getBitmap(context, tmp_large_image);
+
                         builder.setStyle(
-                                new NotificationCompat.BigPictureStyle().bigPicture(Helper.getBitmap(context, tmp_large_image))
+                                new NotificationCompat.BigPictureStyle().bigPicture(b)
                                         .setSummaryText(content_text)
                                         .setBigContentTitle(title)
                         );
@@ -643,73 +680,6 @@ public class MessageNotification {
     }
 
 
-    /**
-     * To retrieve large icon and big picture (image) from the received notification
-     */
-    private static class receiveNotification extends AsyncTask<Void, Void, String> {
-
-        @SuppressLint("StaticFieldLeak")
-        Context ctx;
-        PANotification notification;
-        Bitmap largeIcon = null, largeImage = null;
-
-        receiveNotification(Context context, PANotification notification) {
-            super();
-            this.ctx = context;
-            this.notification = notification;
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            String icon = notification.getIcon();
-            if (icon!=null && icon.toLowerCase().startsWith("https://")) {
-                InputStream in;
-                try {
-                    URL url = new URL(icon);
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                    connection.setDoInput(true);
-                    connection.connect();
-                    in = connection.getInputStream();
-                    largeIcon = BitmapFactory.decodeStream(in);
-
-                    connection.disconnect();
-                } catch(Exception e){
-                    LogM.e("Error getting large icon: " + e.getMessage());
-                }
-            }
-
-            String image = notification.getImage();
-            if(image!=null && image.toLowerCase().startsWith("https://")) {
-                InputStream in;
-                try {
-                    URL url = new URL(image);
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                    connection.setDoInput(true);
-                    connection.connect();
-                    in = connection.getInputStream();
-                    largeImage = BitmapFactory.decodeStream(in);
-
-                    connection.disconnect();
-                } catch (Exception e) {
-                    LogM.e("Error getting big picture: " + e.getMessage());
-                }
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            try {
-                MessageNotification.notify(ctx, notification, largeIcon, largeImage, result);
-            } catch (Exception e) {
-                e.printStackTrace();
-                LogM.e("Error while showing notification: "+ e.getMessage());
-            }
-        }
-    }
-
     private static class receivedNotificationReport extends AsyncTask<Void, Void, String> {
         @SuppressLint("StaticFieldLeak")
         Context ctx;
@@ -743,23 +713,7 @@ public class MessageNotification {
                         "&osVer=" + Build.VERSION.RELEASE +
                         "&nref_id=" + notification.getRefId();
 
-                URL url = new URL(raw_url);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setDoInput(true);
-                connection.connect();
-                in = connection.getInputStream();
-
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                        in));
-
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    result.append(line);
-                }
-
-
-                connection.disconnect();
+                Helper.connectWithPushAlert(raw_url, null, "get", false);
 
                 return null;
 

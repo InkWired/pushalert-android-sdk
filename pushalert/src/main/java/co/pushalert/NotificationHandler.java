@@ -204,15 +204,8 @@ public class NotificationHandler extends Activity {
                         "&subs_id=" + URLEncoder.encode(prefs.getString(SUBSCRIBER_ID_PREF, null), "UTF-8") +
                         "&http_user_agent=" + (System.getProperty("http.agent")!=null?URLEncoder.encode(System.getProperty("http.agent"), "UTF-8"):"");
 
+                Helper.connectWithPushAlert(raw_url, null, "get", false);
 
-                URL url = new URL(raw_url);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setDoInput(true);
-                connection.connect();
-
-                connection.getInputStream();
-
-                connection.disconnect();
             } catch (Exception e) {
                 LogM.e("Error in sending click report: " + e.getMessage());
             }

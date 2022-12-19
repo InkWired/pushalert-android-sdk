@@ -5,45 +5,47 @@
     android:layout_height="wrap_content"
     android:paddingStart="@dimen/template1_padding"
     android:paddingEnd="@dimen/template1_padding"
-    android:paddingTop="@dimen/template1_padding_top"
-    android:paddingBottom="@dimen/template1_padding_bottom"
     android:background="@color/notification_template1_bg">
 
 
-        <LinearLayout
-            android:id="@+id/notification_body"
-            android:layout_toStartOf="@+id/notification_large_icon"
-            android:layout_width="match_parent"
+    <LinearLayout
+        android:paddingTop="@dimen/template1_padding_top"
+        android:paddingBottom="@dimen/template1_padding_bottom"
+        android:layout_centerVertical="true"
+        android:id="@+id/notification_body"
+        android:layout_toStartOf="@+id/notification_large_icon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_gravity="center_vertical"
+            android:id="@+id/notification_message"
+            style="@style/TextAppearance.Compat.Notification.Title"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="horizontal">
+            android:layout_marginStart="@dimen/template1_title_margin_start"
+            android:layout_marginEnd="@dimen/template1_title_margin_end"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:lineSpacingExtra="2sp"
+            android:text="" />
 
-            <TextView
-                android:layout_gravity="center_vertical"
-                android:id="@+id/notification_message"
-                style="@style/TextAppearance.Compat.Notification.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/template1_title_margin_start"
-                android:layout_marginEnd="@dimen/template1_title_margin_end"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:text="" />
-
-        </LinearLayout>
+    </LinearLayout>
 
     <ImageView
+        android:layout_centerVertical="true"
         android:id="@+id/notification_large_icon"
         android:src="@android:color/transparent"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_gravity="center"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
         android:scaleType="fitCenter"
         tools:ignore="ContentDescription" />
 
     <TextView
+        android:visibility="gone"
         android:layout_marginTop="2dp"
         android:layout_alignParentEnd="true"
         android:layout_below="@id/notification_large_icon"

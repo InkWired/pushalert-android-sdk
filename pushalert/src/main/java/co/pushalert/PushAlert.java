@@ -928,7 +928,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1065,7 +1065,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1146,7 +1146,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1217,7 +1217,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1290,7 +1290,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1370,7 +1370,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1469,7 +1469,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1577,7 +1577,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1652,7 +1652,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1736,7 +1736,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1829,7 +1829,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
@@ -1908,7 +1908,7 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, true);
+                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
                 if (encrypted_result==null) {
                     return null;
                 } else {
