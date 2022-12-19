@@ -8,7 +8,7 @@ import org.json.JSONObject;
  * @since 02-11-2022
  */
 public class PANotification {
-    private int id, group_id=-1,ref_id;
+    private int id=0, group_id=-1,ref_id=0;
     private String short_title, content, image, url, icon, channel, sound_res, led_color, accent_color, small_icon_res, group_key, lock_screen_visibility, priority;
     private int local_notf_id=-1, sent_time = 0, template_id=0, campaign_id=0;
     private String short_title_attr, content_attr, url_attr, campaign, header_text;
@@ -66,7 +66,12 @@ public class PANotification {
                           String action2_title_attr, String action2_url_attr,
                           String action3_title_attr, String action3_url_attr,
                           String type, String extraData, String ref_id, String campaign_id, String campaign, String header_text, String template_id){
-        this.id = Integer.parseInt(id);
+
+        try{
+            this.id = Integer.parseInt(id);
+        }
+        catch (Exception ignored){}
+
         this.short_title = short_title;
         this.content = content;
         this.url = url;
@@ -144,7 +149,10 @@ public class PANotification {
             this.extraData = new JSONObject();
         }
 
-        this.ref_id = Integer.parseInt(ref_id);
+        try{
+            this.ref_id = Integer.parseInt(ref_id);
+        }
+        catch (Exception ignored){}
 
         if(template_id!=null) {
             try{
