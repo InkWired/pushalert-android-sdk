@@ -78,15 +78,15 @@ public class PushAlert {
     static final String ABANDONED_CART_DATA = "_pa_abandoned_cart";
     static final String PRODUCT_ALERT_DATA = "_pa_product_alert";
     private static final String APP_VERSION = "_pa_app_version";
-    public static final String PA_DEFAULT_SMALL_ICON = "pa_default_small_icon";
-    public static final String PA_DEFAULT_ACCENT_COLOR = "pa_default_accent_color";
+    static final String PA_DEFAULT_SMALL_ICON = "pa_default_small_icon";
+    static final String PA_DEFAULT_ACCENT_COLOR = "pa_default_accent_color";
     //public static final String PA_ALERT_ONLY_ONCE = "pa_alert_only_once";
 
     //private static final String USER_SUBSCRIPTION_STATE = "PA_USER_SUBSCRIPTION_STATE";
     private static final String USER_PRIVACY_CONSENT = "PA_USER_PRIVACY_CONSENT";
     private static final String USER_PRIVACY_CONSENT_REQUIRED = "PA_USER_PRIVACY_CONSENT_REQUIRED";
     private static final String APP_NOTIFICATION_PERMISSION_STATE = "PA_APP_NOTIFICATION_PERMISSION_STATE";
-    public static final String ENABLE_FIREBASE_ANALYTICS = "PA_ENABLE_FIREBASE_ANALYTICS";
+    static final String ENABLE_FIREBASE_ANALYTICS = "PA_ENABLE_FIREBASE_ANALYTICS";
 
     @SuppressLint("StaticFieldLeak")
     private static PushAlert.InkWired instance;
@@ -113,20 +113,24 @@ public class PushAlert {
         AUTO, TWO_STEP, MANUAL
     }
 
-    public static int PA_SUBS_STATUS_SUBSCRIBED = 1;
-    public static int PA_SUBS_STATUS_UNSUBSCRIBED = -1;
-    public static int PA_SUBS_STATUS_DEFAULT = 0;
-    public static int PA_SUBS_STATUS_DENIED = -2;
+    public enum AbandonedCartAction{
+        UPDATE, DELETE
+    }
+
+    static int PA_SUBS_STATUS_SUBSCRIBED = 1;
+    static int PA_SUBS_STATUS_UNSUBSCRIBED = -1;
+    static int PA_SUBS_STATUS_DEFAULT = 0;
+    static int PA_SUBS_STATUS_DENIED = -2;
 
     static PAInAppBehaviour mInAppBehaviour = PAInAppBehaviour.NOTIFICATION;
     static PAOptInMode mOptInMode = PAOptInMode.AUTO;
     static PASubscribe mOnSubscribeListener = null;
     static FirebaseAnalytics mFirebaseAnalytics = null;
 
-    public static boolean fireBaseInitialized =false;
-    public static boolean showAskOnAndroid13Above = false;
-    public static final int PUSHALERT_PERMISSION_REQUEST_POST_NOTIFICATIONS=1981;
-    public static boolean resumedFromAppNotificationSettings = false;
+    static boolean fireBaseInitialized =false;
+    static boolean showAskOnAndroid13Above = false;
+    static final int PUSHALERT_PERMISSION_REQUEST_POST_NOTIFICATIONS=1981;
+    static boolean resumedFromAppNotificationSettings = false;
 
     private PushAlert() {
     }
@@ -454,7 +458,7 @@ public class PushAlert {
      * @param action action can be update or delete
      * @param data key-value pair map includes cart url, checkout url, total items, product name, image or any additional data
      */
-    public static void processAbandonedCart(String action, Map<String, String> data){
+    public static void processAbandonedCart(AbandonedCartAction action, Map<String, String> data){
         new AbandonedCart(mContext, action, data).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
@@ -591,11 +595,6 @@ public class PushAlert {
         return  -1;
     }
 
-    /*//Session conversion is different that we need to report everytime if there is notification id
-    static void reportConversion(int notification_id, String conversion_name, double conversion_value){
-         new ReportConversion(mContext, notification_id, conversion_name, conversion_value).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-    }*/
-
     /**
      * Report conversion with value (like purchase)
      * @param conversion_name conversion name
@@ -616,7 +615,7 @@ public class PushAlert {
             conversionNotificationId = conversionReceivedNotificationId;
         }
 
-        if(conversionNotificationId>0) {
+        if(conversionNotificationId>0 || conversion_name.equalsIgnoreCase("purchase")) {
             new ReportConversion(mContext, conversionNotificationId, conversion_name, conversion_value, direct).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
@@ -787,7 +786,7 @@ public class PushAlert {
     }
 
     //Check for version change
-    private static void setAppVersionInit(Context context){
+    private static void setAppVersionInit(Context context, boolean syncVersion){
         try {
             int version_stored = Helper.getPreference(context, APP_VERSION, 0);
             int current_version = context.getPackageManager()
@@ -795,7 +794,9 @@ public class PushAlert {
             if (version_stored != current_version) {
                 Helper.setPreference(mContext, APP_VERSION, current_version);
 
-                setAppVersion(String.valueOf(current_version));
+                if(syncVersion) {
+                    setAppVersion(String.valueOf(current_version));
+                }
             }
         }
         catch (Exception ignored){
@@ -924,6 +925,14 @@ public class PushAlert {
                     postDataParams.put("subscription_url", "na");
                     postDataParams.put("app_type", "android");
 
+                    try {
+                        int current_version = context.getPackageManager()
+                                .getPackageInfo(context.getPackageName(), 0).versionCode;
+                        postDataParams.put("app_version", current_version);
+                    }
+                    catch (Exception ignored){
+                    }
+
                 } catch (Exception ignored) {
 
                 }
@@ -1000,7 +1009,7 @@ public class PushAlert {
                             }
                         }
 
-                        setAppVersionInit(context);
+                        setAppVersionInit(context, false);
 
                     } else {
                         if(reader.has("error") && reader.getString("error").equals("InvalidAppID")){
@@ -1328,9 +1337,14 @@ public class PushAlert {
         String action;
         Map<String, String> data;
 
-        AbandonedCart(Context context, String action, Map<String, String> data) {
+        AbandonedCart(Context context, AbandonedCartAction action, Map<String, String> data) {
             this.context = context;
-            this.action = action;
+            if(action==AbandonedCartAction.DELETE){
+                this.action = "delete";
+            }
+            else{
+                this.action = "update";
+            }
             this.data = data;
         }
 
@@ -2082,7 +2096,7 @@ public class PushAlert {
                                         }
                                     });
                         } else {
-                            setAppVersionInit(mContext);
+                            setAppVersionInit(mContext, true);
                         }
                     } catch (Exception e) {
                         //e.printStackTrace();

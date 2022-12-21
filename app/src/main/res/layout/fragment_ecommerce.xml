@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".main.GeneralPlaceholderFragment">
+
+    <RelativeLayout
+        android:id="@+id/item1"
+        android:layout_margin="10dp"
+        android:background="#f7f7f7"
+        android:padding="10dp"
+        android:gravity="center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:layout_marginEnd="10dp"
+            android:id="@+id/item1Img"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/tshirt"
+            android:layout_width="64dp"
+            android:layout_height="64dp"/>
+        <TextView
+            android:layout_marginTop="8dp"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="Awesome T-shirt"
+            android:id="@+id/item1Title"
+            android:layout_toEndOf="@+id/item1Img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:layout_toEndOf="@+id/item1Img"
+            android:layout_below="@+id/item1Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$4.99"/>
+
+        <Button
+            android:letterSpacing="0"
+            android:id="@+id/item1Btn"
+            android:padding="8dp"
+            android:textSize="11sp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add to Cart"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_below="@+id/item1"
+        android:id="@+id/item2"
+        android:layout_margin="10dp"
+        android:background="#f7f7f7"
+        android:padding="10dp"
+        android:gravity="center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:layout_marginEnd="10dp"
+            android:id="@+id/item2Img"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/shoes"
+            android:layout_width="64dp"
+            android:layout_height="64dp"/>
+        <TextView
+            android:layout_marginTop="8dp"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="Wearable Shoes"
+            android:id="@+id/item2Title"
+            android:layout_toEndOf="@+id/item2Img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:layout_toEndOf="@+id/item2Img"
+            android:layout_below="@+id/item2Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$19.99"/>
+
+        <Button
+            android:letterSpacing="0"
+            android:id="@+id/item2Btn"
+            android:padding="8dp"
+            android:textSize="11sp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add to Cart"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_below="@+id/item2"
+        android:id="@+id/item3"
+        android:layout_margin="10dp"
+        android:background="#f7f7f7"
+        android:padding="10dp"
+        android:gravity="center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:layout_marginEnd="10dp"
+            android:id="@+id/item3Img"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/cap"
+            android:layout_width="64dp"
+            android:layout_height="64dp"/>
+        <TextView
+            android:layout_marginTop="8dp"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="Mind-blowing Cap"
+            android:id="@+id/item3Title"
+            android:layout_toEndOf="@+id/item3Img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:layout_toEndOf="@+id/item3Img"
+            android:layout_below="@+id/item3Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$2.99"/>
+
+        <Button
+            android:letterSpacing="0"
+            android:id="@+id/item3Btn"
+            android:padding="8dp"
+            android:textSize="11sp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add to Cart"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:padding="20dp"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/totalAmount"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Total Amount: $0"/>
+
+        <Button
+            android:letterSpacing="0"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:id="@+id/completeOrder"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Complete Order"/>
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:layout_below="@id/item3"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:textSize="12sp"
+            android:id="@+id/btnOutOfStockAlerts"
+            android:letterSpacing="0"
+            android:layout_margin="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Out of Stock Alerts"/>
+
+        <Button
+            android:textSize="12sp"
+            android:id="@+id/btnPriceDropAlerts"
+            android:letterSpacing="0"
+            android:layout_margin="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Price Drop Alerts"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:padding="15dp"
+        android:visibility="gone"
+        android:id="@+id/outOfStockUI"
+        android:background="#ffffff"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:textColor="#555555"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Product Details"/>
+
+        <TextView
+            android:layout_marginTop="12dp"
+            android:paddingBottom="0dp"
+            android:textColor="@android:color/black"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Awesome T-Shirt"/>
+
+        <TextView
+            android:textColor="#aaaaaa"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="100% Cotton Shirt"/>
+        
+        <ImageView
+            android:layout_gravity="center"
+            android:src="@drawable/tshirt_large"
+            android:layout_width="200dp"
+            android:layout_height="200dp"/>
+
+        <RelativeLayout
+            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:gravity="center_vertical|start"
+                android:textColor="@color/blue_dark"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="$4.99"/>
+
+            <TextView
+                android:gravity="center_vertical|end"
+                android:textColor="#aaaaaa"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Out of Stocks"/>
+
+        </RelativeLayout>
+
+        <TextView
+            android:layout_marginTop="10dp"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="A shirt that's 100% cotton is made from natural cotton, which is a crop that requires a lot of water to grow. This material is soft to the touch and results in a high-end look."/>
+
+        <Button
+            android:id="@+id/btnOutOfStockAlertsUI"
+            android:layout_marginTop="10dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Remind Me"/>
+
+
+
+        <TextView
+            android:padding="10dp"
+            android:id="@+id/closeOutOfStockUI"
+            android:clickable="true"
+            android:textColor="#aaaaaa"
+            android:layout_marginTop="5dp"
+            android:textSize="14sp"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Close"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:padding="15dp"
+        android:visibility="gone"
+        android:id="@+id/priceDropUI"
+        android:background="#ffffff"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:textColor="#555555"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Product Details"/>
+
+        <TextView
+            android:layout_marginTop="12dp"
+            android:paddingBottom="0dp"
+            android:textColor="@android:color/black"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Awesome T-Shirt"/>
+
+        <TextView
+            android:textColor="#aaaaaa"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="100% Cotton Shirt"/>
+
+        <ImageView
+            android:layout_gravity="center"
+            android:src="@drawable/tshirt_large"
+            android:layout_width="200dp"
+            android:layout_height="200dp"/>
+
+        <RelativeLayout
+            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:gravity="center_vertical|start"
+                android:textColor="@color/blue_dark"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="$4.99"/>
+
+            <TextView
+                android:gravity="center_vertical|end"
+                android:textColor="#aaaaaa"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="8 in Stocks"/>
+
+        </RelativeLayout>
+
+        <TextView
+            android:layout_marginTop="10dp"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="A shirt that's 100% cotton is made from natural cotton, which is a crop that requires a lot of water to grow. This material is soft to the touch and results in a high-end look."/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:layout_alignParentEnd="true"
+                android:letterSpacing="0"
+                android:id="@+id/btnPriceDropAlertsUI"
+                android:layout_marginTop="10dp"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Price Drop Alert"/>
+
+            <Button
+                android:layout_alignParentStart="true"
+                android:letterSpacing="0"
+                android:layout_marginTop="10dp"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add to Cart"/>
+        </RelativeLayout>
+
+        <TextView
+            android:padding="10dp"
+            android:id="@+id/closePriceDropUI"
+            android:clickable="true"
+            android:textColor="#aaaaaa"
+            android:layout_marginTop="5dp"
+            android:textSize="14sp"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Close"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+</RelativeLayout>
