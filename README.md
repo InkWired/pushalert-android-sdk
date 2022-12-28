@@ -1,5 +1,9 @@
 <p align="center">
-  <img width="200" src="https://cdn.pushalert.co/img/logo-pushalert.svg"/>
+  <picture>
+    <source width="200" media="(prefers-color-scheme: dark)" srcset="https://cdn.pushalert.co/img/logo-pushalert-white.svg">
+    <source width="200" media="(prefers-color-scheme: light)" srcset="https://cdn.pushalert.co/img/logo-pushalert.svg">
+    <img width="200" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://cdn.pushalert.co/img/logo-pushalert.svg">
+  </picture>
 </p>
 
 ### PushAlert Android Push Notification SDK
