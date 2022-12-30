@@ -25,7 +25,6 @@ public class ECommercePlaceholderFragment extends Fragment {
 
     private static final String ARG_SECTION_NUMBER = "section_number";
 
-    private PageViewModel pageViewModel;
     private FragmentEcommerceBinding binding;
     private double total_amount =0;
     private int total_items = 0;
@@ -41,7 +40,7 @@ public class ECommercePlaceholderFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        pageViewModel = new ViewModelProvider(this).get(PageViewModel.class);
+        PageViewModel pageViewModel = new ViewModelProvider(this).get(PageViewModel.class);
         int index = 1;
         if (getArguments() != null) {
             index = getArguments().getInt(ARG_SECTION_NUMBER);
@@ -144,15 +143,14 @@ public class ECommercePlaceholderFragment extends Fragment {
 
 
         final Button btnOutOfStockAlertsUI = binding.btnOutOfStockAlertsUI;
-        if(PushAlert.isOutOfStockEnabled(2431, 1)){
+        if(PushAlert.isOutOfStockEnabled(2432, 1)){
             //Here you can disable button or change to remove alert
         }
         btnOutOfStockAlertsUI.setOnClickListener(v -> {
             Map<String, String> map = new HashMap<>();
-            map.put("title", "Awesome T-Shirt");
-            map.put("url", "https://korner.space/blog/product/tshirt/");
+            map.put("name", "Alex");
 
-            PushAlert.addOutOfStockAlert(2431, 1, 40.00, map);
+            PushAlert.addOutOfStockAlert(2432, 1, 19.99, map);
 
             Toast.makeText(getContext(), "Out of Stock Alert Successfully Registered!", Toast.LENGTH_SHORT).show();
         });
@@ -163,10 +161,9 @@ public class ECommercePlaceholderFragment extends Fragment {
         }
         btnPriceDropAlertsUI.setOnClickListener(v -> {
             Map<String, String> map = new HashMap<>();
-            map.put("title", "Awesome T-Shirt");
-            map.put("url", "https://korner.space/blog/product/tshirt/");
+            map.put("name", "Mohit");
 
-            PushAlert.addPriceDropAlert(2431, 1, 40.00, map);
+            PushAlert.addPriceDropAlert(2431, 1, 4.99, map);
 
             Toast.makeText(getContext(), "Price Drop Alert Successfully Registered!", Toast.LENGTH_SHORT).show();
         });

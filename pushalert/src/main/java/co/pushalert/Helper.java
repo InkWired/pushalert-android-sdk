@@ -25,6 +25,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.core.content.ContextCompat;
 
@@ -45,6 +47,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,88 +85,121 @@ class Helper {
             else
                 result.append("&");
 
-            result.append(URLEncoder.encode(key, "UTF-8"));
+            result.append(URLEncoder.encode(key, StandardCharsets.UTF_8.name()));
             result.append("=");
-            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+            result.append(URLEncoder.encode(value.toString(), StandardCharsets.UTF_8.name()));
 
         }
         return result.toString();
     }
 
-    static String connectWithPushAlert(String url, JSONObject finalParams, String method, boolean authorization){
-        int retry_count = 0;
-        int retry_allowed = 3;
-        boolean add_delay = false;
-        long delay = 2500L;
+    static void connectWithPushAlert(String method, ConnectionHelper connectionHelper, boolean authorization){
+        final Handler handler = new Handler(Looper.getMainLooper());
 
-        while(retry_count<retry_allowed) {
-            try {
-                if(add_delay){
+
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        es.submit(new Runnable() {
+            @Override
+            public void run() {
+                String url = connectionHelper.getUrl();
+                if(url==null){
+                    return;
+                }
+
+                JSONObject finalParams = connectionHelper.getJSONParams();
+
+                String output = null;
+                int retry_count = 0;
+                int retry_allowed = 3;
+                boolean add_delay = false;
+                long delay = 2500L;
+
+                while(retry_count<retry_allowed) {
                     try {
-                        Thread.sleep(delay);
-                        delay = delay + 2500L;
-                    } catch (InterruptedException ignored) {
+                        if(add_delay){
+                            try {
+                                Thread.sleep(delay);
+                                delay = delay + 2500L;
+                            } catch (InterruptedException ignored) {
+                            }
+                            LogM.e("Retrying url connection - " + retry_count);
+                        }
+
+                        URL urlObj = new URL(url);
+                        HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+
+                        conn.setUseCaches(false);
+                        conn.setConnectTimeout(15000);
+                        conn.setReadTimeout(10000);
+
+                        if (method.equalsIgnoreCase("post")) {
+                            String finalData = getPostDataString(finalParams);
+
+                            byte[] finalParamsByte;
+                            finalParamsByte = finalData.getBytes(StandardCharsets.UTF_8);
+
+                            conn.setDoOutput(true);
+                            conn.setDoInput(true);
+                            conn.setRequestMethod("POST");
+                            if (authorization) {
+                                conn.setRequestProperty("Authorization", "pushalert_id=" + appId);
+                            }
+                            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                            conn.setRequestProperty("charset", "utf-8");
+                            conn.setRequestProperty("Content-Length", Integer.toString(finalParamsByte.length));
+
+                            DataOutputStream dataOutputStream = new DataOutputStream(conn.getOutputStream());
+                            dataOutputStream.write(finalParamsByte);
+
+                            dataOutputStream.flush();
+                            dataOutputStream.close();
+                        }
+
+                        int responseCode = conn.getResponseCode();
+                        if (responseCode == HttpsURLConnection.HTTP_OK) {
+                            StringBuffer result = new StringBuffer();
+                            String line;
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                            while ((line = reader.readLine()) != null) {
+                                result.append(line);
+                            }
+                            String encrypted_result = result.toString();
+                            if (encrypted_result.compareToIgnoreCase("") == 0) {
+                                output = null;
+                            } else {
+                                output = result.toString();
+                            }
+                            retry_count = retry_allowed+1; //Just finishing it
+                        }
+                        conn.disconnect();
+
+
+                    } catch (Exception e) {
+                        LogM.e("Not able to connect with PushAlert: " + e.getMessage());
                     }
-                    LogM.e("Retrying url connection - " + retry_count);
+
+                    add_delay = true;
+                    retry_count++;
                 }
 
-                URL urlObj = new URL(url);
-                HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
-
-                conn.setUseCaches(false);
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(10000);
-
-                if (method.equalsIgnoreCase("post")) {
-                    String finalData = getPostDataString(finalParams);
-
-                    byte[] finalParamsByte;
-                    finalParamsByte = finalData.getBytes(StandardCharsets.UTF_8);
-
-                    conn.setDoOutput(true);
-                    conn.setDoInput(true);
-                    conn.setRequestMethod("POST");
-                    if (authorization) {
-                        conn.setRequestProperty("Authorization", "pushalert_id=" + appId);
-                    }
-                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                    conn.setRequestProperty("charset", "utf-8");
-                    conn.setRequestProperty("Content-Length", Integer.toString(finalParamsByte.length));
-
-                    DataOutputStream dataOutputStream = new DataOutputStream(conn.getOutputStream());
-                    dataOutputStream.write(finalParamsByte);
-
-                    dataOutputStream.flush();
-                    dataOutputStream.close();
-                }
-
-                int responseCode = conn.getResponseCode();
-                if (responseCode == HttpsURLConnection.HTTP_OK) {
-                    StringBuffer result = new StringBuffer();
-                    String line;
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    while ((line = reader.readLine()) != null) {
-                        result.append(line);
-                    }
-                    String encrypted_result = result.toString();
-                    if (encrypted_result.compareToIgnoreCase("") == 0) {
-                        return null;
-                    } else {
-                        return result.toString();
+                JSONObject reader = null;
+                try {
+                    if (output != null) {
+                        reader = new JSONObject(output);
                     }
                 }
+                catch (Exception ignored){}
 
-                conn.disconnect();
 
-            } catch (Exception e) {
-                LogM.e("Not able to connect with PushAlert: " + e.getMessage());
+                JSONObject finalReader = reader;
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        connectionHelper.postResult(finalReader);
+                    }
+                });
             }
-
-            add_delay = true;
-            retry_count++;
-        }
-
-        return null;
+        });
     }
 
     static boolean isNetworkAvailable(Context context) {
@@ -731,4 +768,10 @@ class Helper {
 
         return null;
     }
+}
+
+interface ConnectionHelper {
+    String getUrl();
+    JSONObject getJSONParams();
+    void postResult(JSONObject reader);
 }

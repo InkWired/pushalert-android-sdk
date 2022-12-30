@@ -3,17 +3,14 @@ package co.pushalert;
 import static co.pushalert.PushAlert.NOTIFICATION_CHANNEL;
 import static co.pushalert.PushAlert.SUBSCRIBER_ID_PREF;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.TypedValue;
@@ -26,17 +23,14 @@ import androidx.core.content.ContextCompat;
 
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 /**
  * Helper class for handling new message notifications.
@@ -56,7 +50,45 @@ public class MessageNotification {
      */
     static void sendReceivedReport(final Context context,
                               PANotification notification){
-        new receivedNotificationReport(context, notification).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Helper.connectWithPushAlert("get", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
+                return null;
+            }
+
+            @Override
+            public String getUrl() {
+                try {
+
+                    SharedPreferences prefs = Helper.getSharedPreferences(context);
+
+                    String[] pushalert_info = Helper.getAppId(context).split("-");
+                    String raw_url = "https://androidapi.pushalert.co/deliveredApp.php?" +
+                            "user_id=" + pushalert_info[1] +
+                            "&domain_id=" + pushalert_info[2] +
+                            "&subs_id=" + URLEncoder.encode(prefs.getString(SUBSCRIBER_ID_PREF, null), StandardCharsets.UTF_8.name()) +
+                            "&sent_time=" + notification.getSentTime() +
+                            "&http_user_agent=" + (System.getProperty("http.agent")!=null?URLEncoder.encode(System.getProperty("http.agent"), StandardCharsets.UTF_8.name()):"") +
+                            "&notification_id=" + notification.getId() +
+                            "&type=" + notification.getType() +
+                            "&device=" + (context.getResources().getBoolean(R.bool.isTablet)?"tablet":"mobile") +
+                            "&os=" + "android" +
+                            "&osVer=" + Build.VERSION.RELEASE +
+                            "&nref_id=" + notification.getRefId();
+
+                    return raw_url;
+                } catch (Exception e) {
+                    LogM.e("Error in sending receiving report: "+ e.getMessage());
+                }
+
+                return null;
+            }
+
+            @Override
+            public void postResult(JSONObject result) {
+
+            }
+        }, false);
     }
 
     /**
@@ -65,21 +97,29 @@ public class MessageNotification {
      */
     static void notifyInit(final Context context,
                                   PANotification notification){
-        //new receiveNotification(context, notification).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
 
-        Bitmap largeIcon = null, largeImage = null;
+                Bitmap largeIcon = null, largeImage = null;
 
-        String icon = notification.getIcon();
-        if (icon!=null && icon.toLowerCase().startsWith("https://")) {
-            largeIcon = Helper.getBitmapFromURL(icon);
-        }
+                String icon = notification.getIcon();
+                if (icon!=null && icon.toLowerCase().startsWith("https://")) {
+                    largeIcon = Helper.getBitmapFromURL(icon);
+                }
 
-        String image = notification.getImage();
-        if(image!=null && image.toLowerCase().startsWith("https://")) {
-            largeImage = Helper.getBitmapFromURL(image);
-        }
+                String image = notification.getImage();
+                if(image!=null && image.toLowerCase().startsWith("https://")) {
+                    largeImage = Helper.getBitmapFromURL(image);
+                }
 
-        notify(context, notification, largeIcon, largeImage,null);
+                Bitmap finalLargeIcon = largeIcon;
+                Bitmap finalLargeImage = largeImage;
+
+                MessageNotification.notify(context, notification, largeIcon, largeImage, null);
+
+            }
+        });
     }
 
     static void notify(final Context context,
@@ -225,21 +265,25 @@ public class MessageNotification {
 
         }
         else if(notification.getType()==32 || notification.getType()==33){
-            String product_alert_data = sharedPrefs.getString(PushAlert.PRODUCT_ALERT_DATA, "{}");
+            JSONObject extraData = notification.getExtraData();
+            if(extraData.has("ls_id")){
+                try {
+                    String product_alert_data = sharedPrefs.getString(PushAlert.PRODUCT_ALERT_DATA + extraData.getString("ls_id"), "{}");
 
-            try {
-                JSONObject attributes = new JSONObject(product_alert_data);
-                String new_title = Helper.processJSONAttributes(title, attributes);
-                String new_ticker = Helper.processJSONAttributes(ticker, attributes);
+                    JSONObject attributes = new JSONObject(product_alert_data);
+                    String new_title = Helper.processJSONAttributes(title, attributes);
+                    String new_ticker = Helper.processJSONAttributes(ticker, attributes);
 
-                if(new_title.compareTo("-1")!=0 && new_ticker.compareTo("-1")!=0){
-                    title = new_title;
-                    ticker = new_ticker;
+                    if(new_title.compareTo("-1")!=0 && new_ticker.compareTo("-1")!=0){
+                        title = new_title;
+                        ticker = new_ticker;
+                    }
+                } catch (Exception e) {
+
+                    LogM.e("Error while setting attribute in abandoned cart: " + e.getMessage());
                 }
-            } catch (Exception e) {
-
-                LogM.e("Error while setting attribute in abandoned cart: " + e.getMessage());
             }
+
         }
 
 
@@ -677,57 +721,5 @@ public class MessageNotification {
         NotificationManagerCompat nm = NotificationManagerCompat.from(context);
 
         nm.cancel(notificationTag, notificationID);
-    }
-
-
-    private static class receivedNotificationReport extends AsyncTask<Void, Void, String> {
-        @SuppressLint("StaticFieldLeak")
-        Context ctx;
-        PANotification notification;
-
-        receivedNotificationReport(Context context, PANotification notification) {
-            super();
-            this.ctx = context;
-            this.notification = notification;
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-
-            InputStream in;
-            try {
-
-                SharedPreferences prefs = Helper.getSharedPreferences(ctx);
-
-                String[] pushalert_info = Helper.getAppId(ctx).split("-");
-                String raw_url = "https://androidapi.pushalert.co/deliveredApp.php?" +
-                        "user_id=" + pushalert_info[1] +
-                        "&domain_id=" + pushalert_info[2] +
-                        "&subs_id=" + URLEncoder.encode(prefs.getString(SUBSCRIBER_ID_PREF, null), "UTF-8") +
-                        "&sent_time=" + notification.getSentTime() +
-                        "&http_user_agent=" + (System.getProperty("http.agent")!=null?URLEncoder.encode(System.getProperty("http.agent"), "UTF-8"):"") +
-                        "&notification_id=" + notification.getId() +
-                        "&type=" + notification.getType() +
-                        "&device=" + (ctx.getResources().getBoolean(R.bool.isTablet)?"tablet":"mobile") +
-                        "&os=" + "android" +
-                        "&osVer=" + Build.VERSION.RELEASE +
-                        "&nref_id=" + notification.getRefId();
-
-                Helper.connectWithPushAlert(raw_url, null, "get", false);
-
-                return null;
-
-            } catch (Exception e) {
-                LogM.e("Error in sending receiving report: "+ e.getMessage());
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-        }
     }
 }

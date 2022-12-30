@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
@@ -21,9 +20,8 @@ import androidx.core.app.NotificationManagerCompat;
 import org.json.JSONObject;
 
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * To handle notification click
@@ -134,8 +132,48 @@ public class NotificationHandler extends Activity {
     }
 
     public void sendClickEvent(Context context, String uid, int notificationID, int clicked_on, int type, int eid){
-        new ClickedNotification(context, uid, notificationID, clicked_on, type, eid)
-                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Helper.connectWithPushAlert("get", new ConnectionHelper(){
+
+            @Override
+            public JSONObject getJSONParams() {
+                return null;
+            }
+
+            @Override
+            public String getUrl() {
+                try{
+                    SharedPreferences prefs = Helper.getSharedPreferences(context);
+
+                    String[] pushalert_info = Helper.getAppId(context).split("-");
+                    String raw_url = "https://androidapi.pushalert.co/trackClickedApp.php?" +
+                            "uid=" + uid +
+                            "&browser=" + "chrome" +
+                            "&os=" + "android" +
+                            "&osVer=" + Build.VERSION.RELEASE +
+                            "&device=" + (context.getResources().getBoolean(R.bool.isTablet)?"tablet":"mobile") +
+                            "&user_id=" + pushalert_info[1] +
+                            "&domain_id=" + pushalert_info[2] +
+                            "&host=" + pushalert_info[0] +
+                            "&notification_id=" + notificationID +
+                            "&clicked_on=" + clicked_on +
+                            "&type=" + type +
+                            "&eid=" + eid +
+                            "&subs_id=" + URLEncoder.encode(prefs.getString(SUBSCRIBER_ID_PREF, null), StandardCharsets.UTF_8.name()) +
+                            "&http_user_agent=" + (System.getProperty("http.agent")!=null?URLEncoder.encode(System.getProperty("http.agent"), StandardCharsets.UTF_8.name()):"");
+
+                    return raw_url;
+                } catch (Exception e) {
+                    LogM.e("Error in sending click report: " + e.getMessage());
+                }
+
+                return null;
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+
+            }
+        },false);
     }
 
     public void clearNotification(Context context, int notificationID){
@@ -160,62 +198,6 @@ public class NotificationHandler extends Activity {
         } catch (Exception e) {
             LogM.e("Error while closing notification drawer: " + e.getMessage());
             e.printStackTrace();
-        }
-    }
-
-    private static class ClickedNotification extends AsyncTask<Void, Void, String> {
-
-        @SuppressLint("StaticFieldLeak")
-        Context ctx;
-        String uid;
-        int notificationID, clicked_on, type, eid;
-
-        ClickedNotification(Context context, String uid, int notificationID, int clicked_on, int type, int eid) {
-            super();
-            this.ctx = context;
-            this.uid = uid;
-            this.notificationID = notificationID;
-            this.clicked_on = clicked_on;
-            this.type = type;
-            this.eid = eid;
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-
-            try {
-
-                SharedPreferences prefs = Helper.getSharedPreferences(ctx);
-
-                String[] pushalert_info = Helper.getAppId(ctx).split("-");
-                String raw_url = "https://androidapi.pushalert.co/trackClickedApp.php?" +
-                        "uid=" + uid +
-                        "&browser=" + "chrome" +
-                        "&os=" + "android" +
-                        "&osVer=" + Build.VERSION.RELEASE +
-                        "&device=" + (ctx.getResources().getBoolean(R.bool.isTablet)?"tablet":"mobile") +
-                        "&user_id=" + pushalert_info[1] +
-                        "&domain_id=" + pushalert_info[2] +
-                        "&host=" + pushalert_info[0] +
-                        "&notification_id=" + notificationID +
-                        "&clicked_on=" + clicked_on +
-                        "&type=" + type +
-                        "&eid=" + eid +
-                        "&subs_id=" + URLEncoder.encode(prefs.getString(SUBSCRIBER_ID_PREF, null), "UTF-8") +
-                        "&http_user_agent=" + (System.getProperty("http.agent")!=null?URLEncoder.encode(System.getProperty("http.agent"), "UTF-8"):"");
-
-                Helper.connectWithPushAlert(raw_url, null, "get", false);
-
-            } catch (Exception e) {
-                LogM.e("Error in sending click report: " + e.getMessage());
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
         }
     }
 }

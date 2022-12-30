@@ -49,8 +49,8 @@ public class PANotification {
      * @param action2_url notification action 2 url
      * @param action3_title notification action 3 title
      * @param action2_icon_res notification action 2 icon resource name
-*    * @param action3_url notification action 3 url
-*    * @param action3_icon_res notification action 3 icon resource name
+     * @param action3_url notification action 3 url
+     * @param action3_icon_res notification action 3 icon resource name
      * @param short_title_attr notification short title with attributes
      * @param content_attr notification content message with attributes
      * @param type notification type

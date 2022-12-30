@@ -18,7 +18,6 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.media.AudioAttributes;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
@@ -29,7 +28,6 @@ import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
@@ -48,8 +46,8 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -76,7 +74,7 @@ public class PushAlert {
     static final String NOTIFICATION_CHANNEL = "pa_fallback_channel";
     private static final String NOTIFICATION_CHANNEL_TITLE = "Miscellaneous";
     static final String ABANDONED_CART_DATA = "_pa_abandoned_cart";
-    static final String PRODUCT_ALERT_DATA = "_pa_product_alert";
+    static final String PRODUCT_ALERT_DATA = "_pa_product_alert_";
     private static final String APP_VERSION = "_pa_app_version";
     static final String PA_DEFAULT_SMALL_ICON = "pa_default_small_icon";
     static final String PA_DEFAULT_ACCENT_COLOR = "pa_default_accent_color";
@@ -95,7 +93,6 @@ public class PushAlert {
     private static NotificationOpener notificationOpener = null;
     private static TwoStepHelper twoStepHelper = null;
     static String appId = null;
-    private  static int open_time;
     static boolean paUnsubscribeWhenNotificationsAreDisabled = false;
 
     @SuppressLint("StaticFieldLeak")
@@ -245,7 +242,64 @@ public class PushAlert {
      * @param attributes Key-value pair of attributes
      */
     public static void  addAttributes(Map<String, String> attributes){
-        new AddAttributesTask(PushAlert.mContext, attributes).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
+                while (sendingSubsID) {
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
+                }
+
+                JSONObject postDataParams = new JSONObject();
+                try {
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
+                    JSONObject jsonAttributes = new JSONObject(attributes);
+                    postDataParams.put("attributes", jsonAttributes.toString());
+
+                } catch (Exception ignored) {
+
+                }
+
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(mContext)) {
+                    return null;
+                }
+
+                return "https://androidapi.pushalert.co/app/v1/attribute/put";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            SharedPreferences.Editor editor = Helper.getSharedPreferences(mContext).edit();
+                            //JSONArray jsonArray = attributes.toJSONArray();
+                            for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                                String key = entry.getKey();
+                                String value = entry.getValue();
+                                editor.putString("pa_attr_"+key, value);
+                            }
+
+                            editor.apply();
+
+                            LogM.i("Attributes added successfully.");
+                        } else {
+                            LogM.i("Issue while adding attributes.");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post adding attribute: "  + e.getMessage());
+                    }
+                }
+            }
+        }, true);
     }
 
     /**
@@ -253,7 +307,52 @@ public class PushAlert {
      * @param seg_id segment id
      */
     public static void  addUserToSegment(int seg_id){
-        new AddToSegment(mContext, seg_id).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
+                while (sendingSubsID) {
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
+                }
+
+                JSONObject postDataParams = new JSONObject();
+                try {
+                    postDataParams.put("subscribers", "[\""+PushAlert.getSubscriberID()+"\"]");
+                } catch (Exception ignored) {
+
+                }
+
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(mContext)) {
+                    return null;
+                }
+
+                return "https://androidapi.pushalert.co/app/v1/segment/"+seg_id+"/add";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            LogM.i("User added to segment successfully");
+                            //}
+                        } else {
+                            LogM.i("Issue while adding subscriber to segment");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post Add to Segment: " + e.getMessage());
+                    }
+                }
+            }
+        }, true);
     }
 
     /**
@@ -261,7 +360,51 @@ public class PushAlert {
      * @param seg_id segment id
      */
     public static void  removeUserFromSegment(int seg_id){
-        new RemoveFromSegment(mContext, seg_id).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
+                while (sendingSubsID) {
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
+                }
+
+                JSONObject postDataParams = new JSONObject();
+                try {
+                    postDataParams.put("subscribers", "[\""+PushAlert.getSubscriberID()+"\"]");
+                } catch (Exception ignored) {
+
+                }
+
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(mContext)) {
+                    return null;
+                }
+
+                return "https://androidapi.pushalert.co/app/v1/segment/"+seg_id+"/remove";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            LogM.i( "Subscriber removed from the segment.");
+                        } else {
+                            LogM.i( "Issue while removing subscriber to segment");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post remove from Segment: " + e.getMessage());
+                    }
+                }
+            }
+        }, true);
     }
 
     /*/**
@@ -459,7 +602,67 @@ public class PushAlert {
      * @param data key-value pair map includes cart url, checkout url, total items, product name, image or any additional data
      */
     public static void processAbandonedCart(AbandonedCartAction action, Map<String, String> data){
-        new AbandonedCart(mContext, action, data).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
+                while (sendingSubsID) {
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
+                }
+
+                JSONObject postDataParams = new JSONObject();
+                try {
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
+                    if(data!=null) {
+                        JSONObject jsonAttributes = new JSONObject(data);
+                        postDataParams.put("extra_info", jsonAttributes.toString());
+                    }
+                } catch (Exception ignored) {
+
+                }
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(mContext)) {
+                    return null;
+                }
+
+                String uri = "https://androidapi.pushalert.co/app/v1/abandonedCart";
+                if(action==AbandonedCartAction.DELETE){
+                    uri = "https://androidapi.pushalert.co/app/v1/abandonedCart/delete";
+                }
+
+                return uri;
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                SharedPreferences.Editor editor = Helper.getSharedPreferences(mContext).edit();
+                if (data != null) {
+                    JSONObject jsonAttributes = new JSONObject(data);
+                    editor.putString(ABANDONED_CART_DATA, jsonAttributes.toString());
+                }
+                editor.apply();
+
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            LogM.i( "AbandonedCart action performed successfully: "+action);
+                        } else {
+                            LogM.i("There was some issue while processing abandoned cart.");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post Abandoned Cart: " + e.getMessage());
+                    }
+                }
+            }
+        }, true);
     }
 
     /**
@@ -478,7 +681,7 @@ public class PushAlert {
      * @param extras key-value map with product title and url
      */
     public static void addOutOfStockAlert(int product_id, int variant_id, double price, Map<String, String> extras){
-        new ProductAlert(mContext, "oos", "add", product_id, variant_id, price, extras).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ProductAlert(mContext, "oos", "add", product_id, variant_id, price, extras);
     }
 
     /**
@@ -497,7 +700,7 @@ public class PushAlert {
      * @param variant_id variant ID, if not variant set 0
      */
     public static void removeOutOfStockAlert(int product_id, int variant_id){
-        new ProductAlert(mContext, "oos", "remove", product_id, variant_id, 0, null).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ProductAlert(mContext, "oos", "remove", product_id, variant_id, 0, null);
     }
 
     /**
@@ -508,7 +711,7 @@ public class PushAlert {
      * @param extras key-value map with product title and url
      */
     public static void addPriceDropAlert(int product_id, int variant_id, double price, Map<String, String> extras){
-        new ProductAlert(mContext, "price_drop", "add", product_id, variant_id, price, extras).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ProductAlert(mContext, "price_drop", "add", product_id, variant_id, price, extras);
     }
 
     /**
@@ -527,20 +730,7 @@ public class PushAlert {
      * @param variant_id variant ID, if not variant set 0
      */
     public static void removePriceDropAlert(int product_id, int variant_id){
-        new ProductAlert(mContext, "price_drop", "remove", product_id, variant_id, 0, null).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-    }
-
-    private static void initAppUsageAnalytics(){
-        open_time = (int)(System.currentTimeMillis()/1000);
-    }
-
-    private static void appUsageAnalytics(){
-        int exit_time = (int)(System.currentTimeMillis()/1000);
-        new AppUsage(mContext, open_time,exit_time).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-    }
-
-    private static void reportAnalytics(String url, String title){
-        new Analytics(mContext, url, title).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ProductAlert(mContext, "price_drop", "remove", product_id, variant_id, 0, null);
     }
 
     private  static void reportAnalytics(String analyticsJSONStr, int conversionReceivedNotificationId){
@@ -562,7 +752,60 @@ public class PushAlert {
         //Reset
         Helper.removeLastClickedNotificationInfo(mContext);
 
-        new Analytics(mContext, analyticsJSONStr, conversionNotificationId, direct).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        int finalConversionNotificationId = conversionNotificationId;
+        int finalDirect = direct;
+
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
+                while (sendingSubsID) {
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
+                }
+
+                JSONObject postDataParams = new JSONObject();
+                try {
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
+
+                    //postDataParams.put("url", mUrl);
+                    //postDataParams.put("title", mTitle);
+                    postDataParams.put("analytics", analyticsJSONStr);
+                    postDataParams.put("conversion_notification_id", finalConversionNotificationId);
+                    postDataParams.put("conversion_direct", finalDirect);
+                } catch (Exception ignored) {
+
+                }
+
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(mContext)) {
+                    return null;
+                }
+
+                return "https://androidapi.pushalert.co/analyticsApp";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            LogM.i("App analytics updated successfully");
+                        } else {
+                            LogM.i("There was some issue while updating app analytics");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post sending Analytics: " + e.getMessage());
+                    }
+                }
+            }
+        }, true);
     }
 
     static int getConversionReceivedNotificationId(){
@@ -616,7 +859,7 @@ public class PushAlert {
         }
 
         if(conversionNotificationId>0 || conversion_name.equalsIgnoreCase("purchase")) {
-            new ReportConversion(mContext, conversionNotificationId, conversion_name, conversion_value, direct).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            ProcessReportConversion(mContext, conversionNotificationId, conversion_name, conversion_value, direct);
         }
     }
 
@@ -635,7 +878,7 @@ public class PushAlert {
     public static void  associateID(String id){
         Map<String, String> attributes = new HashMap<>();
         attributes.put("_assoc_id", id);
-        new AddAttributesTask(mContext, attributes).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        PushAlert.addAttributes(attributes);
     }
 
 
@@ -773,7 +1016,7 @@ public class PushAlert {
      */
     public static void disableNotification(boolean disable){
         if(getUserPrivacyConsent()) {
-            new SetAppNotificationPermissionStateTask(PushAlert.mContext, !disable).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            SetAppNotificationPermissionStateTask(PushAlert.mContext, !disable);
         }
     }
 
@@ -817,17 +1060,17 @@ public class PushAlert {
     }
 
     static void subscribe(String subs_id){
-        new ManageSubscriberTask(mContext, "subscribe").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, subs_id);
+        ManageSubscriberTask(mContext, subs_id,"subscribe");
     }
 
     static void checkSubscription(Context context, String subs_id){
-        new ManageSubscriberTask(context, "check").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, subs_id);
+        ManageSubscriberTask(context, subs_id, "check");
     }
 
     static void unsubscribe(Context context){
         String subs_id = Helper.getPreference(context, SUBSCRIBER_ID_PREF, null);
         if(subs_id!=null) {
-            new ManageSubscriberTask(context, "unsubscribe").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, subs_id);
+            ManageSubscriberTask(context, subs_id,"unsubscribe");
         }
     }
 
@@ -839,56 +1082,30 @@ public class PushAlert {
      * @param eventValue A numeric value associated with the event (e.g. 2017).
      */
     public static void triggerEvent(String eventCategory, String eventAction, String eventLabel, int eventValue){
-        new TriggerEvents(mContext, eventCategory, eventAction, eventLabel, eventValue).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ProcessTriggerEvents(mContext, eventCategory, eventAction, eventLabel, eventValue);
     }
 
     public static void triggerEvent(String eventCategory, String eventAction, String eventLabel){
-        new TriggerEvents(mContext, eventCategory, eventAction, eventLabel, 0).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ProcessTriggerEvents(mContext, eventCategory, eventAction, eventLabel, 0);
     }
 
     public static void triggerEvent(String eventCategory, String eventAction){
-        new TriggerEvents(mContext, eventCategory, eventAction, "", 0).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ProcessTriggerEvents(mContext, eventCategory, eventAction, "", 0);
     }
 
-    static class ManageSubscriberTask extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        String action;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-
-        ManageSubscriberTask(Context context, String action) {
-            this.action = action;
-            this.context = context;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
+    static void ManageSubscriberTask(Context context, String reg_id, String action) {
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
                 while (sendingSubsID) {
-                    Thread.sleep(500);
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
                 }
                 sendingSubsID = true;
-                String reg_id = params[0];
 
-                String[] pushalert_info = Helper.getAppId(mContext).split("-");
-
-
-                //String uri = "https://"+pushalert_info[0]+".pushalert.co/"+action+"/"+reg_id;
-                String uri = "https://androidapps.pushalert.co/"+action+"/"+reg_id;
-
+                String[] pushalert_info = Helper.getAppId(context).split("-");
                 JSONObject postDataParams = new JSONObject();
                 try {
                     WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
@@ -918,7 +1135,7 @@ public class PushAlert {
                     postDataParams.put("color_depth", "-1");
                     postDataParams.put("language", Locale.getDefault().getLanguage());
                     postDataParams.put("engine", "na");
-                    postDataParams.put("userAgent", (System.getProperty("http.agent")!=null? URLEncoder.encode(System.getProperty("http.agent"), "UTF-8"):""));
+                    postDataParams.put("userAgent", (System.getProperty("http.agent")!=null? URLEncoder.encode(System.getProperty("http.agent"), StandardCharsets.UTF_8.name()):""));
                     postDataParams.put("endpoint_url", "https://fcm.googleapis.com/fcm/send/");
                     postDataParams.put("subs_info", "{}");
                     postDataParams.put("referrer", "na");
@@ -937,537 +1154,164 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(context)) {
                     return null;
-                } else {
-                    return new JSONObject(encrypted_result);
                 }
 
-            } catch (Exception e) {
-                LogM.e("Error in manage subscribe task: " + action + " - " + e.getMessage());
+                return "https://androidapps.pushalert.co/"+action+"/"+reg_id;
             }
-            return null;
-        }
 
-        @SuppressLint("ApplySharedPref")
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            PushAlert.tokenAlreadyGenerated = true;
-            if (reader != null) {
-                try {
-                    if (reader.has("status") && reader.getBoolean("status")) {
-                        LogM.i("Added/Updated subscriber successfully - " + action);
+            @Override
+            public void postResult(JSONObject reader) {
+                PushAlert.tokenAlreadyGenerated = true;
+                if (reader != null) {
+                    try {
+                        if (reader.has("status") && reader.getBoolean("status")) {
+                            LogM.i("Added/Updated subscriber successfully - " + action);
 
-                        SharedPreferences.Editor editor = prefs.edit();
-                        if(action.compareToIgnoreCase("unsubscribe")==0){
-                            editor.remove(SUBSCRIBER_ID_PREF);
-                            //editor.putBoolean(USER_SUBSCRIPTION_STATE, false);
-                            editor.putInt(SUBSCRIPTION_STATUS_PREF, PA_SUBS_STATUS_UNSUBSCRIBED);
+                            SharedPreferences.Editor editor = Helper.getSharedPreferences(context).edit();
+                            if(action.compareToIgnoreCase("unsubscribe")==0){
+                                editor.remove(SUBSCRIBER_ID_PREF);
+                                //editor.putBoolean(USER_SUBSCRIPTION_STATE, false);
+                                editor.putInt(SUBSCRIPTION_STATUS_PREF, PA_SUBS_STATUS_UNSUBSCRIBED);
 
-                            editor.apply();
-                        }
-                        else{
-                            editor.putString(SUBSCRIBER_ID_PREF, reader.getString("subs_id"));
-                            //editor.putBoolean(USER_SUBSCRIPTION_STATE, true);
-                            editor.putInt(SUBSCRIPTION_STATUS_PREF, PA_SUBS_STATUS_SUBSCRIBED);
-                            editor.putLong(Helper.PREFERENCE_ATTRIBUTION_TIME, reader.getLong("attribution_time"));
-
-                            editor.commit(); //commit is required
-                            sendingSubsID = false;
-
-                            if(mOnSubscribeListener!=null) {
-                                mOnSubscribeListener.onSubscribe(reader.getString("subs_id"));
+                                editor.apply();
                             }
+                            else{
+                                editor.putString(SUBSCRIBER_ID_PREF, reader.getString("subs_id"));
+                                //editor.putBoolean(USER_SUBSCRIPTION_STATE, true);
+                                editor.putInt(SUBSCRIPTION_STATUS_PREF, PA_SUBS_STATUS_SUBSCRIBED);
+                                editor.putLong(Helper.PREFERENCE_ATTRIBUTION_TIME, reader.getLong("attribution_time"));
 
-                            if(reader.has("groups")){
-                                JSONArray groups = reader.getJSONArray("groups");
-                                for(int i=0;i<groups.length();i++){
-                                    JSONObject data = groups.getJSONObject(i);
-                                    PushAlert.createGroup(context, data.getString("name"), data.getString("id"));
+                                editor.commit(); //commit is required
+                                sendingSubsID = false;
+
+                                if(mOnSubscribeListener!=null) {
+                                    mOnSubscribeListener.onSubscribe(reader.getString("subs_id"));
                                 }
-                            }
 
-                            PushAlert.createDefaultChannel(context);
-                            if(reader.has("channels")){
-                                JSONArray channels = reader.getJSONArray("channels");
-                                for(int i=0;i<channels.length();i++){
-                                    JSONObject data = channels.getJSONObject(i);
-                                    PushAlert.createChannel(context, data.getString("channelID"), data.getString("name"), data.getString("desc"), data.getString("importance"), data.getString("ledColor"), data.getString("lockScreenVisibility"),
-                                            data.getString("badge"), data.getString("sound"), data.getString("vibration_pattern"),  data.getString("group_id"));
+                                if(reader.has("groups")){
+                                    JSONArray groups = reader.getJSONArray("groups");
+                                    for(int i=0;i<groups.length();i++){
+                                        JSONObject data = groups.getJSONObject(i);
+                                        PushAlert.createGroup(context, data.getString("name"), data.getString("id"));
+                                    }
                                 }
-                            }
 
-                            //Welcome Notification
-                            if(action.compareToIgnoreCase("subscribe")==0){
-                                if(reader.has("welcome_enable") && reader.getBoolean("welcome_enable")){
-                                    if(reader.has("welcome_data")){
-                                        JSONObject welcome_data = new JSONObject(reader.getString("welcome_data"));
-                                        Helper.processNotification(context, Helper.toMap(welcome_data), false);
+                                PushAlert.createDefaultChannel(context);
+                                if(reader.has("channels")){
+                                    JSONArray channels = reader.getJSONArray("channels");
+                                    for(int i=0;i<channels.length();i++){
+                                        JSONObject data = channels.getJSONObject(i);
+                                        PushAlert.createChannel(context, data.getString("channelID"), data.getString("name"), data.getString("desc"), data.getString("importance"), data.getString("ledColor"), data.getString("lockScreenVisibility"),
+                                                data.getString("badge"), data.getString("sound"), data.getString("vibration_pattern"),  data.getString("group_id"));
+                                    }
+                                }
+
+                                //Welcome Notification
+                                if(action.compareToIgnoreCase("subscribe")==0){
+                                    if(reader.has("welcome_enable") && reader.getBoolean("welcome_enable")){
+                                        if(reader.has("welcome_data")){
+                                            JSONObject welcome_data = new JSONObject(reader.getString("welcome_data"));
+                                            Helper.processNotification(context, Helper.toMap(welcome_data), false);
+                                        }
                                     }
                                 }
                             }
+
+                            setAppVersionInit(context, false);
+
+                        } else {
+                            if(reader.has("error") && reader.getString("error").equals("InvalidAppID")){
+                                LogM.e(reader.getString("msg"));
+                            }
+                            else{
+                                LogM.i("Issue while managing subscriber");
+                            }
+
                         }
 
-                        setAppVersionInit(context, false);
-
-                    } else {
-                        if(reader.has("error") && reader.getString("error").equals("InvalidAppID")){
-                            LogM.e(reader.getString("msg"));
-                        }
-                        else{
-                            LogM.i("Issue while managing subscriber");
-                        }
-
+                    } catch (Exception e) {
+                        LogM.e("Error post manage subscriber task: " + e.getMessage());
+                        e.printStackTrace();
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error post manage subscriber task: " + e.getMessage());
-                    e.printStackTrace();
                 }
-            }
 
-            sendingSubsID = false;
-        }
+                sendingSubsID = false;
+            }
+        }, true);
     }
 
-    static class AddAttributesTask extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        Map<String, String> attributes;
-
-        AddAttributesTask(Context context, Map<String, String> attributes) {
-            this.context = context;
-            this.attributes = attributes;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
+    static void SetAppNotificationPermissionStateTask(Context context, boolean subscriptionState) {
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
                 while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/attribute/put";
-                JSONObject postDataParams = new JSONObject();
-                try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
-                    JSONObject jsonAttributes = new JSONObject(attributes);
-                    postDataParams.put("attributes", jsonAttributes.toString());
-
-                } catch (Exception ignored) {
-
-                }
-
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
-                    return null;
-                } else {
-                    return new JSONObject(encrypted_result);
-                }
-
-            } catch (Exception e) {
-                LogM.e("Error in add attribute: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        SharedPreferences.Editor editor = prefs.edit();
-                        //JSONArray jsonArray = attributes.toJSONArray();
-                        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-                            String key = entry.getKey();
-                            String value = entry.getValue();
-                            editor.putString("pa_attr_"+key, value);
-                        }
-
-                        editor.apply();
-                    } else {
-                        LogM.i("Issue while adding attributes.");
+                    try {
+                        Thread.sleep(500);
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post adding attribute: "  + e.getMessage());
+                    catch (InterruptedException ignored){}
                 }
-            }
-        }
-    }
-
-    static class SetAppNotificationPermissionStateTask extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        boolean subscriptionState;
-        SharedPreferences prefs;
-
-        SetAppNotificationPermissionStateTask(Context context, boolean subscriptionState) {
-            this.context = context;
-            this.subscriptionState = subscriptionState;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
-                while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/subscriptionState";
 
                 JSONObject postDataParams = new JSONObject();
                 try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
                     postDataParams.put("is_active", subscriptionState?1:0);
 
                 } catch (Exception ignored) {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(context)) {
                     return null;
-                } else {
-                    return new JSONObject(encrypted_result);
                 }
 
-            } catch (Exception e) {
-                LogM.e("Error in setAppNotificationPermissionState: " + e.getMessage());
+                return "https://androidapi.pushalert.co/app/v1/subscriptionState";
             }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        Helper.setPreference(context, APP_NOTIFICATION_PERMISSION_STATE, subscriptionState);
-                    } else {
-                        LogM.i("Issue while updating user subscription state.");
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            Helper.setPreference(context, APP_NOTIFICATION_PERMISSION_STATE, subscriptionState);
+                            LogM.i("Subscription state updated successfully.");
+                        } else {
+                            LogM.i("Issue while updating user subscription state.");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post setAppNotificationPermissionState: " + e.getMessage());
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post setAppNotificationPermissionState: " + e.getMessage());
                 }
             }
-        }
+        }, true);
     }
 
-    static class AddToSegment extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        int seg_id;
-
-        AddToSegment(Context context, int seg_id) {
-            this.context = context;
-            this.seg_id = seg_id;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
+    static void ProductAlert(Context context, String type, String action, int product_id, int variant_id, double price, Map<String, String> extras) {
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
                 while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/segment/"+seg_id+"/add";
-
-                JSONObject postDataParams = new JSONObject();
-                try {
-                    postDataParams.put("subscribers", "[\""+prefs.getString(SUBSCRIBER_ID_PREF, null)+"\"]");
-                } catch (Exception ignored) {
-
-                }
-
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
-                    return null;
-                } else {
-                    return new JSONObject(encrypted_result);
-                }
-
-            } catch (Exception e) {
-                LogM.e("Error in Add to Segment: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i("User added to segment successfully");
-                        //}
-                    } else {
-                        LogM.i("Issue while adding subscriber to segment");
+                    try {
+                        Thread.sleep(500);
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post Add to Segment: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    static class RemoveFromSegment extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        int seg_id;
-
-        RemoveFromSegment(Context context, int seg_id) {
-            this.context = context;
-            this.seg_id = seg_id;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
-                while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/segment/"+seg_id+"/remove";
-                URL url = new URL(uri);
-
-                JSONObject postDataParams = new JSONObject();
-                try {
-                    postDataParams.put("subscribers", "[\""+prefs.getString(SUBSCRIBER_ID_PREF, null)+"\"]");
-                } catch (Exception ignored) {
-
-                }
-
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
-                    return null;
-                } else {
-                    return new JSONObject(encrypted_result);
-                }
-
-            } catch (Exception e) {
-                LogM.e("Error in remove from Segment: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i( "Subscriber removed from the segment.");
-                    } else {
-                        LogM.i( "Issue while removing subscriber to segment");
-                    }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post remove from Segment: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    static class AbandonedCart extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        String action;
-        Map<String, String> data;
-
-        AbandonedCart(Context context, AbandonedCartAction action, Map<String, String> data) {
-            this.context = context;
-            if(action==AbandonedCartAction.DELETE){
-                this.action = "delete";
-            }
-            else{
-                this.action = "update";
-            }
-            this.data = data;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
-                while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/abandonedCart";
-                if(action.compareToIgnoreCase("delete")==0){
-                    uri = "https://androidapi.pushalert.co/app/v1/abandonedCart/delete";
+                    catch (InterruptedException ignored){}
                 }
 
                 JSONObject postDataParams = new JSONObject();
                 try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
-                    if(data!=null) {
-                        JSONObject jsonAttributes = new JSONObject(data);
-                        postDataParams.put("extra_info", jsonAttributes.toString());
-                    }
-                } catch (Exception ignored) {
-
-                }
-
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
-                    return null;
-                } else {
-                    return new JSONObject(encrypted_result);
-                }
-
-            } catch (Exception e) {
-                LogM.e("Error in Abandoned Cart: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            SharedPreferences.Editor editor = prefs.edit();
-            if(data!=null){
-                JSONObject jsonAttributes = new JSONObject(data);
-                editor.putString(ABANDONED_CART_DATA, jsonAttributes.toString());
-            }
-            editor.apply();
-
-
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i( "AbandonedCart action performed successfully: "+action);
-                    } else {
-                        LogM.i("There was some issue while processing abandoned cart.");
-                    }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post Abandoned Cart: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    static class ProductAlert extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        String action; //add or remove
-        String type;
-        Map<String, String> extras;
-        int product_id, variant_id;
-        double price;
-
-        ProductAlert(Context context, String type, String action, int product_id, int variant_id, double price, Map<String, String> extras) {
-            this.context = context;
-            this.type = type;
-            this.action = action;
-            this.product_id = product_id;
-            this.variant_id = variant_id;
-            this.price = price*100;
-            this.extras = extras;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
-                while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/productAlert";
-
-                JSONObject postDataParams = new JSONObject();
-                try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
 
                     postDataParams.put("product_id", String.valueOf(product_id));
                     postDataParams.put("variant_id", String.valueOf(variant_id));
@@ -1483,101 +1327,79 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(context)) {
                     return null;
-                } else {
-                    return new JSONObject(encrypted_result);
                 }
-            } catch (Exception e) {
-                LogM.e("Error in Product Alert: " + e.getMessage());
+
+                return "https://androidapi.pushalert.co/app/v1/productAlert";
             }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        SharedPreferences.Editor editor = prefs.edit();
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            SharedPreferences.Editor editor = Helper.getSharedPreferences(context).edit();
 
-                        if(extras!=null){
-                            JSONObject jsonAttributes = new JSONObject(extras);
-                            editor.putString(PRODUCT_ALERT_DATA, jsonAttributes.toString());
-                        }
-
-                        if(type.compareToIgnoreCase("oos")==0) {
-                            if (action.compareToIgnoreCase("add")==0) {
-                                editor.putBoolean("pushalert_oos_" + product_id + "_" + variant_id, true);
-                            } else {
-                                editor.remove("pushalert_oos_" + product_id + "_" + variant_id);
+                            JSONObject jsonAttributes = new JSONObject();
+                            if(extras!=null){
+                                jsonAttributes = new JSONObject(extras);
                             }
-                        }
-                        else if(type.compareToIgnoreCase("price_drop")==0) {
-                            if (action.compareToIgnoreCase("add")==0) {
-                                editor.putBoolean("pushalert_price_drop_" + product_id + "_" + variant_id, true);
-                            } else {
-                                editor.remove("pushalert_price_drop_" + product_id + "_" + variant_id);
+
+                            if(type.compareToIgnoreCase("oos")==0) {
+                                if (action.compareToIgnoreCase("add")==0) {
+                                    editor.putBoolean("pushalert_oos_" + product_id + "_" + variant_id, true);
+                                    editor.putString(PRODUCT_ALERT_DATA + "pushalert_oos_" + product_id + "_" + variant_id, jsonAttributes.toString());
+                                } else {
+                                    editor.remove("pushalert_oos_" + product_id + "_" + variant_id);
+                                    editor.remove(PRODUCT_ALERT_DATA + "pushalert_oos_" + product_id + "_" + variant_id);
+                                }
                             }
+                            else if(type.compareToIgnoreCase("price_drop")==0) {
+                                if (action.compareToIgnoreCase("add")==0) {
+                                    editor.putBoolean("pushalert_price_drop_" + product_id + "_" + variant_id, true);
+                                    editor.putString(PRODUCT_ALERT_DATA + "pushalert_price_drop_" + product_id + "_" + variant_id, jsonAttributes.toString());
+                                } else {
+                                    editor.remove("pushalert_price_drop_" + product_id + "_" + variant_id);
+                                    editor.remove(PRODUCT_ALERT_DATA + "pushalert_price_drop_" + product_id + "_" + variant_id);
+                                }
+                            }
+
+                            editor.apply();
+
+                            LogM.i("Product alert successfully added.");
+                        } else {
+                            LogM.i("There was some issue while processing product alerts");
                         }
 
-                        editor.apply();
-
-                        //}
-                    } else {
-                        LogM.i("There was some issue while processing product alerts");
+                    } catch (Exception e) {
+                        LogM.e("Error in post Product Alert: " + e.getMessage());
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post Product Alert: " + e.getMessage());
                 }
+
             }
-        }
+        }, true);
     }
 
-    static class LocationUpdate extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        String city, region, country, country_code;
-        double latitude, longitude;
-
-        LocationUpdate(Context context, String city, String region, String country, String country_code, double latitude, double longitude) {
-            this.context = context;
-            this.city = city;
-            this.region = region;
-            this.country = country;
-            this.country_code = country_code;
-            this.latitude = latitude;
-            this.longitude = longitude;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
+    static void LocationUpdate(Context context, String city, String region, String country, String country_code, double latitude, double longitude) {
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
                 while (sendingSubsID) {
-                    Thread.sleep(500);
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
                 }
 
-
-                String uri = "https://androidapi.pushalert.co/app/v1/updateLoc";
                 JSONObject postDataParams = new JSONObject();
                 try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
 
                     postDataParams.put("city", city);
                     postDataParams.put("region", region);
@@ -1591,154 +1413,50 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(context)) {
                     return null;
-                } else {
-                    return new JSONObject(encrypted_result);
                 }
-            } catch (Exception e) {
-                LogM.e("Error in Location Update: " + e.getMessage());
-                //e.printStackTrace();
-            }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i("Info updated successfully");
-                    } else {
-                        LogM.i("There was some issue while updating info");
+                return "https://androidapi.pushalert.co/app/v1/updateLoc";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            LogM.i("Info updated successfully");
+                        } else {
+                            LogM.i("There was some issue while updating info");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post Location Update: " + e.getMessage());
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post Location Update: " + e.getMessage());
                 }
             }
-        }
+        }, true);
     }
 
-    static class AppUsage extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        int open_time, exit_time;
-
-        AppUsage(Context context, int open_time, int exit_time) {
-            this.context = context;
-            this.open_time = open_time;
-            this.exit_time = exit_time;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
+    static void ProcessReportConversion(Context context, int notification_id, String conversion_name, double conversion_value, int direct) {
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
                 while (sendingSubsID) {
-                    Thread.sleep(500);
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
                 }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/appUsage";
 
                 JSONObject postDataParams = new JSONObject();
                 try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
-
-                    postDataParams.put("open_time", open_time);
-                    postDataParams.put("exit_time", exit_time);
-                } catch (Exception ignored) {
-
-                }
-
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
-                    return null;
-                } else {
-                    return new JSONObject(encrypted_result);
-                }
-            } catch (Exception e) {
-                LogM.e("Error in App Usage: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i("App usage updated successfully");
-                    } else {
-                        LogM.i("There was some issue while updating app usage");
-                    }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post App Usage: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    static class ReportConversion extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        String conversion_name;
-        double conversion_value;
-        int notification_id;
-        int direct;
-
-        ReportConversion(Context context, int notification_id, String conversion_name, double conversion_value, int direct) {
-            this.context = context;
-            this.conversion_name = conversion_name;
-            this.conversion_value = conversion_value;
-            this.notification_id = notification_id;
-            this.direct = direct;
-
-            LogM.i("Reporting conversion "+notification_id+" - " + conversion_name + "=" + conversion_value);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
-                while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/conversion";
-                JSONObject postDataParams = new JSONObject();
-                try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
 
                     postDataParams.put("conversion_name", conversion_name);
                     postDataParams.put("notification_id", notification_id);
@@ -1750,169 +1468,50 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(context)) {
                     return null;
-                } else {
-                    return new JSONObject(encrypted_result);
                 }
-            } catch (Exception e) {
-                LogM.e("Error in Conversion Reporting: " + e.getMessage());
-                //e.printStackTrace();
-            }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i("Conversion reported successfully");
-                    } else {
-                        LogM.i("There was some issue while updating info");
+                return "https://androidapi.pushalert.co/app/v1/conversion";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            LogM.i("Conversion reported successfully");
+                        } else {
+                            LogM.i("There was some issue while updating info");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post Conversion Reporting: " + e.getMessage());
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post Conversion Reporting: " + e.getMessage());
                 }
             }
-        }
+        }, true);
     }
 
-    static class Analytics extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        String mUrl, mTitle;
-        String analyticsJSONStr;
-        int conversionNotificationId = -1; //For Session Conversion
-        int direct = 0;
-
-        Analytics(Context context, String url, String title) {
-            this.context = context;
-            this.mUrl = url;
-            this.mTitle = title;
-        }
-
-        Analytics(Context context, String analyticsJSONStr) {
-            this.context = context;
-            this.analyticsJSONStr = analyticsJSONStr;
-        }
-
-        Analytics(Context context, String analyticsJSONStr, int conversionNotificationId, int direct) {
-            this.context = context;
-            this.analyticsJSONStr = analyticsJSONStr;
-            this.conversionNotificationId = conversionNotificationId;
-            this.direct = direct;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
+    static void ProcessTriggerEvents(Context context, String eventCategory, String eventAction, String eventLabel, int eventValue) {
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
                 while (sendingSubsID) {
-                    Thread.sleep(500);
+                    try {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException ignored){}
                 }
-
-
-                String uri = "https://androidapi.pushalert.co/analyticsApp";
 
                 JSONObject postDataParams = new JSONObject();
                 try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
-
-                    //postDataParams.put("url", mUrl);
-                    //postDataParams.put("title", mTitle);
-                    postDataParams.put("analytics", analyticsJSONStr);
-                    postDataParams.put("conversion_notification_id", conversionNotificationId);
-                    postDataParams.put("conversion_direct", direct);
-                } catch (Exception ignored) {
-
-                }
-
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
-                    return null;
-                } else {
-                    return new JSONObject(encrypted_result);
-                }
-            } catch (Exception e) {
-                LogM.e("Error in sending Analytics: " + e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i("App analytics updated successfully");
-                    } else {
-                        LogM.i("There was some issue while updating app analytics");
-                    }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post sending Analytics: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    static class TriggerEvents extends AsyncTask<String, Void, JSONObject> {
-        boolean isConnected = false;
-        @SuppressLint("StaticFieldLeak")
-        Context context;
-        SharedPreferences prefs;
-        String eventCategory, eventAction, eventLabel;
-        int eventValue;
-
-        TriggerEvents(Context context, String eventCategory, String eventAction, String eventLabel, int eventValue) {
-            this.context = context;
-            this.eventCategory = eventCategory;
-            this.eventAction = eventAction;
-            this.eventLabel = eventLabel;
-            this.eventValue = eventValue;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            isConnected = Helper.isNetworkAvailable(context);
-            prefs = Helper.getSharedPreferences(context);
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params) {
-            try {
-                if (!isConnected) {
-                    return null;
-                }
-
-                while (sendingSubsID) {
-                    Thread.sleep(500);
-                }
-
-
-                String uri = "https://androidapi.pushalert.co/app/v1/track/event";
-
-                JSONObject postDataParams = new JSONObject();
-                try {
-                    postDataParams.put("subscriber", prefs.getString(SUBSCRIBER_ID_PREF, null));
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
 
                     postDataParams.put("eventCategory", eventCategory);
                     postDataParams.put("eventAction", eventAction);
@@ -1922,34 +1521,34 @@ public class PushAlert {
 
                 }
 
-                String encrypted_result = Helper.connectWithPushAlert(uri, postDataParams, "post", true);
-                if (encrypted_result==null) {
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(context)) {
                     return null;
-                } else {
-                    return new JSONObject(encrypted_result);
                 }
-            } catch (Exception e) {
-                LogM.e("Error in customEvent: " + e.getMessage());
-            }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(JSONObject reader) {
-            if (reader != null) {
-                try {
-                    if (reader.has("success") && reader.getBoolean("success")) {
-                        LogM.i("Event registered successfully");
-                    } else {
-                        LogM.i("There was some issue while registering event");
+                return "https://androidapi.pushalert.co/app/v1/track/event";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                if (reader != null) {
+                    try {
+                        if (reader.has("success") && reader.getBoolean("success")) {
+                            LogM.i("Event registered successfully");
+                        } else {
+                            LogM.i("There was some issue while registering event");
+                        }
+
+                    } catch (Exception e) {
+                        LogM.e("Error in post customEvent: " + e.getMessage());
                     }
-
-                } catch (Exception e) {
-                    LogM.e("Error in post customEvent: " + e.getMessage());
                 }
             }
-
-        }
+        }, true);
     }
 
     static NotificationReceiver getNotificationReceiver(){
@@ -2100,13 +1699,11 @@ public class PushAlert {
                         }
                     } catch (Exception e) {
                         //e.printStackTrace();
-                        LogM.e("Error occurred while initializing (ERR-PA9002): Either google-services.json is missing or com.google.gms:google-services was not applied to your gradle project. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
+                        Log.e(LogM.TAG, "Error occurred while initializing (ERR-PA9002): Either google-services.json is missing or com.google.gms:google-services was not applied to your gradle project. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
 
                         return;
                     }
 
-
-                    open_time = (int) (System.currentTimeMillis() / 1000);
                     PushAlert.InkWired.registerActivityLifeCycleListener((Application) mContext);
                 }
                 else{
@@ -2220,9 +1817,8 @@ public class PushAlert {
                                             location.getLongitude(), 1);
                                     if (addresses.size() > 0) {
                                         Address address = addresses.get(0);
-                                        new PushAlert.LocationUpdate(mContext, address.getLocality(), address.getAdminArea(),
-                                                address.getCountryName(), address.getCountryCode(), address.getLatitude(), address.getLongitude())
-                                                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                                        PushAlert.LocationUpdate(mContext, address.getLocality(), address.getAdminArea(),
+                                                address.getCountryName(), address.getCountryCode(), address.getLatitude(), address.getLongitude());
                                     }
 
                                 }
@@ -2333,8 +1929,6 @@ public class PushAlert {
                     @Override
                     public void onActivityStarted(Activity activity) {
                         if (myStarted == 0) {
-                            initAppUsageAnalytics();
-
                             //Check notification conversion
                             conversionReceivedNotificationId = getConversionReceivedNotificationId();
                         }
@@ -2379,8 +1973,6 @@ public class PushAlert {
 
                         myStarted--;
                         if (myStarted == 0) {
-                            appUsageAnalytics();
-
                             try {
                                 reportAnalytics(analyticsJSON.toString(), conversionReceivedNotificationId);
                             } catch (Exception e) {

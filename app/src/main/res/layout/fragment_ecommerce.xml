@@ -227,7 +227,7 @@
             android:textStyle="bold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Awesome T-Shirt"/>
+            android:text="Wearable Shoes"/>
 
         <TextView
             android:textColor="#aaaaaa"
@@ -235,11 +235,11 @@
             android:textStyle="bold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="100% Cotton Shirt"/>
+            android:text="Most Comfortable Footwear"/>
         
         <ImageView
             android:layout_gravity="center"
-            android:src="@drawable/tshirt_large"
+            android:src="@drawable/shoes_large"
             android:layout_width="200dp"
             android:layout_height="200dp"/>
 
@@ -255,7 +255,7 @@
                 android:textStyle="bold"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="$4.99"/>
+                android:text="$19.99"/>
 
             <TextView
                 android:gravity="center_vertical|end"
@@ -274,7 +274,7 @@
             android:textColor="@android:color/black"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="A shirt that's 100% cotton is made from natural cotton, which is a crop that requires a lot of water to grow. This material is soft to the touch and results in a high-end look."/>
+            android:text="These sneakers feature a breathable mesh and a cushioned insole for comfort, as well as a rubber outsole with strategically placed traction for stability and support on any surface."/>
 
         <Button
             android:id="@+id/btnOutOfStockAlertsUI"
