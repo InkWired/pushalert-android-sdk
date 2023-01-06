@@ -19,6 +19,7 @@ public class PushAlertTest extends Application {
         PushAlert.init("wfvet5v6-2caef9-9ae0", getApplicationContext())
                 .enableFirebaseEventReporting(true)
                 .setDefaultAccentColor(R.color.blue_dark)
+                .unsubscribeWhenNotificationsAreDisabled(false)
                 .setOnSubscribeListener(new PASubscribe() {
                     @Override
                     public void onSubscribe(String s) {

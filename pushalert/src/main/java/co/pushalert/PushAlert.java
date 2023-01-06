@@ -27,7 +27,6 @@ import android.view.Display;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
@@ -118,6 +117,7 @@ public class PushAlert {
     static int PA_SUBS_STATUS_UNSUBSCRIBED = -1;
     static int PA_SUBS_STATUS_DEFAULT = 0;
     static int PA_SUBS_STATUS_DENIED = -2;
+    static int PA_SUBS_STATUS_UNSUBSCRIBED_NOTIFICATION_DISABLED = -3;
 
     static PAInAppBehaviour mInAppBehaviour = PAInAppBehaviour.NOTIFICATION;
     static PAOptInMode mOptInMode = PAOptInMode.AUTO;
@@ -1074,6 +1074,13 @@ public class PushAlert {
         }
     }
 
+    static void unsubscribeNotificationDisabled(Context context){
+        String subs_id = Helper.getPreference(context, SUBSCRIBER_ID_PREF, null);
+        if(subs_id!=null) {
+            ManageSubscriberTask(context, subs_id,"unsubscribe_notification_disabled");
+        }
+    }
+
     /**
      * Events are user interactions with content on your page. These are independent of app load and allow you to track the behavior of visitors. Examples of custom events can be a download, link click, scroll to a particular part of page, video play, ad-click and so on.
  interacted with (e.g. 'Video').
@@ -1118,7 +1125,7 @@ public class PushAlert {
                         display.getMetrics(metrics);
                     }
 
-                    postDataParams.put("action=", action);
+                    postDataParams.put("action=", (action.equalsIgnoreCase("unsubscribe_notification_disabled"))?"unsubscribe":action);
                     postDataParams.put("pa_id", pushalert_info[1]);
                     postDataParams.put("domain_id", pushalert_info[2]);
                     postDataParams.put("host", pushalert_info[0]);
@@ -1163,12 +1170,16 @@ public class PushAlert {
                     return null;
                 }
 
-                return "https://androidapps.pushalert.co/"+action+"/"+reg_id;
+                if(action.equalsIgnoreCase("unsubscribe_notification_disabled")){
+                    return "https://androidapps.pushalert.co/unsubscribe/" + reg_id;
+                }
+                else {
+                    return "https://androidapps.pushalert.co/" + action + "/" + reg_id;
+                }
             }
 
             @Override
             public void postResult(JSONObject reader) {
-                PushAlert.tokenAlreadyGenerated = true;
                 if (reader != null) {
                     try {
                         if (reader.has("status") && reader.getBoolean("status")) {
@@ -1176,9 +1187,20 @@ public class PushAlert {
 
                             SharedPreferences.Editor editor = Helper.getSharedPreferences(context).edit();
                             if(action.compareToIgnoreCase("unsubscribe")==0){
+                                PushAlert.tokenAlreadyGenerated = false;
+
                                 editor.remove(SUBSCRIBER_ID_PREF);
                                 //editor.putBoolean(USER_SUBSCRIPTION_STATE, false);
                                 editor.putInt(SUBSCRIPTION_STATUS_PREF, PA_SUBS_STATUS_UNSUBSCRIBED);
+
+                                editor.apply();
+                            }
+                            else if(action.compareToIgnoreCase("unsubscribe_notification_disabled")==0){
+                                PushAlert.tokenAlreadyGenerated = false;
+
+                                editor.remove(SUBSCRIBER_ID_PREF);
+                                //editor.putBoolean(USER_SUBSCRIPTION_STATE, false);
+                                editor.putInt(SUBSCRIPTION_STATUS_PREF, PA_SUBS_STATUS_UNSUBSCRIBED_NOTIFICATION_DISABLED);
 
                                 editor.apply();
                             }
@@ -1581,26 +1603,6 @@ public class PushAlert {
     }
     */
 
-    private static boolean  canUserSubscribe(Context context){
-        if(paUnsubscribeWhenNotificationsAreDisabled){
-            if(Helper.isAndroid13AndAbove()) {
-                boolean osNotificationPermissionState = getOSNotificationPermissionState(mContext);
-                if(osNotificationPermissionState){
-                    return  true;
-                }
-                else {
-                    return !ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.POST_NOTIFICATIONS);
-                }
-            }
-            else{
-                return getOSNotificationPermissionState(mContext);
-            }
-        }
-        else{
-            return  true;
-        }
-    }
-
     public static class InkWired{
         Context mContext;
 
@@ -1646,69 +1648,74 @@ public class PushAlert {
 
             if (condition1 || condition2 || condition3 || byPassCheck) {
 
-                if(byPassCheck || canUserSubscribe(mContext)) {
-                    //LogM.e("PushAlertSDK", "Checking Android Version - " + Build.VERSION.SDK_INT);
-
-                    if(currSubsID!=null && !PushAlert.getOSNotificationPermissionState(mContext) && !byPassCheck){
-                        return; //User disabled notification by choice, respect privacy
-                    }
-                    else if ((currSubsID==null || (!PushAlert.getOSNotificationPermissionState(mContext) && byPassCheck)) &&
-                                (Helper.isAndroid13AndAbove() || mOptInMode == PAOptInMode.TWO_STEP) && !PushAlert.getOSNotificationPermissionState(mContext)) {
-                        ///LogM.e("PushAlertSDK", "Two Step Opt In Mode - " + (mOptInMode == PAOptInMode.TWO_STEP));
-                        requestPermissionActivity(mOptInMode);
+                if(currSubsID!=null && !PushAlert.getOSNotificationPermissionState(mContext) && !byPassCheck){
+                    //Permission is changed after subscribing
+                    if(paUnsubscribeWhenNotificationsAreDisabled){
+                        LogM.i("Notification permission is changed to disabled and unsubscribe when notification disabled is true. So, unsubscribing user and no firebase initialization");
+                        PushAlert.unsubscribeNotificationDisabled(mContext);
                         return;
                     }
+                }
+                else if(currSubsID==null && paUnsubscribeWhenNotificationsAreDisabled && !PushAlert.getOSNotificationPermissionState(mContext) && Helper.getSubscriptionStatus(mContext)==PA_SUBS_STATUS_UNSUBSCRIBED_NOTIFICATION_DISABLED && !byPassCheck){
+                    LogM.i("Notification permission is disabled and unsubscribe when notification disabled is true. So, no firebase initialization");
+                    return; //User disabled notification by choice, respect privacy
+                }
+                else if ((currSubsID==null || (!PushAlert.getOSNotificationPermissionState(mContext) && byPassCheck)) &&
+                            (Helper.isAndroid13AndAbove() || mOptInMode == PAOptInMode.TWO_STEP) && !PushAlert.getOSNotificationPermissionState(mContext)) {
+                    ///LogM.e("PushAlertSDK", "Two Step Opt In Mode - " + (mOptInMode == PAOptInMode.TWO_STEP));
+
+                    requestPermissionActivity(mOptInMode);
+                    return;
+                }
 
 
-                    try {
-                        FirebaseApp.initializeApp(mContext);
-                    }
-                    catch(NoClassDefFoundError e){
-                        //It means Firebase is not added properly
-                        //e.printStackTrace();
-                        Log.e(LogM.TAG, "Error occurred while initializing (ERR-PA9001): Its seems dependencies are missing. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
-                        return;
-                    }
+                try {
+                    FirebaseApp.initializeApp(mContext);
+                    LogM.e("Initializing push notification lib.");
+                }
+                catch(NoClassDefFoundError e){
+                    //It means Firebase is not added properly
+                    //e.printStackTrace();
+                    Log.e(LogM.TAG, "Error occurred while initializing (ERR-PA9001): Its seems dependencies are missing. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
+                    return;
+                }
 
-                    fireBaseInitialized = true;
+                fireBaseInitialized = true;
 
 
-                    try {
-                        if (currSubsID == null) {
+                try {
+                    if (currSubsID == null) {
 
-                            FirebaseMessaging.getInstance().getToken()
-                                    .addOnCompleteListener(new OnCompleteListener<String>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<String> task) {
-                                            if (!task.isSuccessful()) {
-                                                LogM.w("Fetching FCM registration token failed: " + task.getException());
-                                                return;
-                                            }
-
-                                            // Get new FCM registration token
-                                            String token = task.getResult();
-
-                                            if (!tokenAlreadyGenerated) {
-                                                tokenAlreadyGenerated = true;
-                                                PushAlert.subscribe(token);
-                                            }
+                        FirebaseMessaging.getInstance().getToken()
+                                .addOnCompleteListener(new OnCompleteListener<String>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<String> task) {
+                                        if (!task.isSuccessful()) {
+                                            LogM.w("Fetching FCM registration token failed: " + task.getException());
+                                            return;
                                         }
-                                    });
-                        } else {
-                            setAppVersionInit(mContext, true);
-                        }
-                    } catch (Exception e) {
-                        //e.printStackTrace();
-                        Log.e(LogM.TAG, "Error occurred while initializing (ERR-PA9002): Either google-services.json is missing or com.google.gms:google-services was not applied to your gradle project. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
 
-                        return;
+                                        // Get new FCM registration token
+                                        String token = task.getResult();
+
+                                        if (!tokenAlreadyGenerated) {
+                                            tokenAlreadyGenerated = true;
+                                            PushAlert.subscribe(token);
+                                        }
+                                    }
+                                })
+                        ;
+                    } else {
+                        setAppVersionInit(mContext, true);
                     }
+                } catch (Exception e) {
+                    //e.printStackTrace();
+                    Log.e(LogM.TAG, "Error occurred while initializing (ERR-PA9002): Either google-services.json is missing or com.google.gms:google-services was not applied to your gradle project. Please check the setup guide - https://pushalert.co/app-push-notifications/documentation/android-sdk-setup");
 
-                    PushAlert.InkWired.registerActivityLifeCycleListener((Application) mContext);
+                    return;
                 }
-                else{
-                    PushAlert.unsubscribe(mContext);
-                }
+
+                PushAlert.InkWired.registerActivityLifeCycleListener((Application) mContext);
             }
 
         }
