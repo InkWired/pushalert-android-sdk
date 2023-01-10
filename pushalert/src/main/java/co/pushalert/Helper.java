@@ -33,6 +33,7 @@ import androidx.core.content.ContextCompat;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -67,6 +68,8 @@ class Helper {
     static String EVENT_NOTIFICATION_RECEIVED = "pa_notification_received";
     static String EVENT_NOTIFICATION_CLICKED = "pa_notification_clicked";
     static String EVENT_NOTIFICATION_IMPACT = "pa_notification_impact";
+
+    static String NOT_COMPLETED_TASKS = "PA_NOT_COMPLETED_TASKS";
 
     static String getPostDataString(JSONObject params) throws Exception {
 
@@ -186,6 +189,9 @@ class Helper {
                 try {
                     if (output != null) {
                         reader = new JSONObject(output);
+                    }
+                    else{
+                        connectionHelper.onFailure(url);
                     }
                 }
                 catch (Exception ignored){}
@@ -740,7 +746,7 @@ class Helper {
         return output;
     }
 
-    public static Bitmap getBitmapFromURL(String url) {
+    public static Bitmap getBitmapFromURL(Context context, String url) {
         //Retry is required because device just wake up from sleep
         int retry_count = 0;
         int retry_allowed = 3;
@@ -766,7 +772,77 @@ class Helper {
             retry_count++;
         }
 
+        Helper.addPendingTask(context, "imgUrl", url);
         return null;
+    }
+
+    static void addPendingTask(Context context, String action, String url){
+
+        String existingLog = Helper.getPreference(context, NOT_COMPLETED_TASKS, "");
+        try{
+            JSONArray jsonArray = new JSONArray();
+            if(!existingLog.equalsIgnoreCase("")){
+                jsonArray = new JSONArray(existingLog);
+            }
+
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put(action, url);
+
+            jsonArray.put(jsonObject);
+            Helper.setPreference(context, NOT_COMPLETED_TASKS, jsonArray.toString());
+            LogM.i("Task added successfully.");
+        }
+        catch (Exception e){
+            LogM.e("Error while adding task: " + e.getMessage());
+        }
+    }
+
+    static void completePendingTasks(Context context){
+        String existingLog = Helper.getPreference(context, NOT_COMPLETED_TASKS, "");
+
+        if (!existingLog.equalsIgnoreCase("")) {
+            LogM.i("Clearing pending tasks.");
+
+            processPendingTasks(context, existingLog);
+        } else {
+            LogM.i("No pending task.");
+        }
+    }
+
+    static void processPendingTasks(Context context, String tasks){
+        Helper.connectWithPushAlert("post", new ConnectionHelper() {
+            @Override
+            public JSONObject getJSONParams() {
+                JSONObject postDataParams = new JSONObject();
+                try {
+                    postDataParams.put("subscriber", PushAlert.getSubscriberID());
+                    postDataParams.put("tasks", tasks);
+                } catch (Exception ignored) {
+
+                }
+
+                return postDataParams;
+            }
+
+            @Override
+            public String getUrl() {
+                if (!Helper.isNetworkAvailable(context)) {
+                    return null;
+                }
+
+                return "https://androidapi.pushalert.co/app/v1/pendingTasks";
+            }
+
+            @Override
+            public void postResult(JSONObject reader) {
+                Helper.setPreference(context, NOT_COMPLETED_TASKS, "");
+            }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
+        }, true);
     }
 }
 
@@ -774,4 +850,5 @@ interface ConnectionHelper {
     String getUrl();
     JSONObject getJSONParams();
     void postResult(JSONObject reader);
+    void onFailure(String message);
 }

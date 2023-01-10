@@ -156,10 +156,16 @@ public class NotificationHandler extends Activity {
                             "&host=" + pushalert_info[0] +
                             "&notification_id=" + notificationID +
                             "&clicked_on=" + clicked_on +
+                            "&clicked_time=" + (int)(System.currentTimeMillis() / 1000L) +
                             "&type=" + type +
                             "&eid=" + eid +
                             "&subs_id=" + URLEncoder.encode(prefs.getString(SUBSCRIBER_ID_PREF, null), StandardCharsets.UTF_8.name()) +
                             "&http_user_agent=" + (System.getProperty("http.agent")!=null?URLEncoder.encode(System.getProperty("http.agent"), StandardCharsets.UTF_8.name()):"");
+
+                    if (!Helper.isNetworkAvailable(context)) {
+                        Helper.addPendingTask(context, "clickedReport", raw_url);
+                        return null;
+                    }
 
                     return raw_url;
                 } catch (Exception e) {
@@ -172,6 +178,11 @@ public class NotificationHandler extends Activity {
             @Override
             public void postResult(JSONObject reader) {
 
+            }
+
+            @Override
+            public void onFailure(String message) {
+                Helper.addPendingTask(context, "clickedReport", message);
             }
         },false);
     }

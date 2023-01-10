@@ -59,7 +59,6 @@ public class MessageNotification {
             @Override
             public String getUrl() {
                 try {
-
                     SharedPreferences prefs = Helper.getSharedPreferences(context);
 
                     String[] pushalert_info = Helper.getAppId(context).split("-");
@@ -68,6 +67,7 @@ public class MessageNotification {
                             "&domain_id=" + pushalert_info[2] +
                             "&subs_id=" + URLEncoder.encode(prefs.getString(SUBSCRIBER_ID_PREF, null), StandardCharsets.UTF_8.name()) +
                             "&sent_time=" + notification.getSentTime() +
+                            "&delivered_time=" + (int)(System.currentTimeMillis() / 1000L) +
                             "&http_user_agent=" + (System.getProperty("http.agent")!=null?URLEncoder.encode(System.getProperty("http.agent"), StandardCharsets.UTF_8.name()):"") +
                             "&notification_id=" + notification.getId() +
                             "&type=" + notification.getType() +
@@ -75,6 +75,11 @@ public class MessageNotification {
                             "&os=" + "android" +
                             "&osVer=" + Build.VERSION.RELEASE +
                             "&nref_id=" + notification.getRefId();
+
+                    if (!Helper.isNetworkAvailable(context)) {
+                        Helper.addPendingTask(context, "receivedReport", raw_url);
+                        return null;
+                    }
 
                     return raw_url;
                 } catch (Exception e) {
@@ -87,6 +92,11 @@ public class MessageNotification {
             @Override
             public void postResult(JSONObject result) {
 
+            }
+
+            @Override
+            public void onFailure(String message) {
+                Helper.addPendingTask(context, "receivedReport", message);
             }
         }, false);
     }
@@ -105,16 +115,13 @@ public class MessageNotification {
 
                 String icon = notification.getIcon();
                 if (icon!=null && icon.toLowerCase().startsWith("https://")) {
-                    largeIcon = Helper.getBitmapFromURL(icon);
+                    largeIcon = Helper.getBitmapFromURL(context, icon);
                 }
 
                 String image = notification.getImage();
                 if(image!=null && image.toLowerCase().startsWith("https://")) {
-                    largeImage = Helper.getBitmapFromURL(image);
+                    largeImage = Helper.getBitmapFromURL(context, image);
                 }
-
-                Bitmap finalLargeIcon = largeIcon;
-                Bitmap finalLargeImage = largeImage;
 
                 MessageNotification.notify(context, notification, largeIcon, largeImage, null);
 
@@ -514,16 +521,16 @@ public class MessageNotification {
         if(notification.getPriority()!=null){
             String importance = notification.getPriority();
             if(importance.compareToIgnoreCase("urgent")==0){
-                priority = NotificationCompat.PRIORITY_HIGH;
+                priority = NotificationCompat.PRIORITY_MAX;
             }
             else if(importance.compareToIgnoreCase("high")==0){
-                priority = NotificationCompat.PRIORITY_DEFAULT;
+                priority = NotificationCompat.PRIORITY_HIGH;
             }
             else if(importance.compareToIgnoreCase("medium")==0){
-                priority = NotificationCompat.PRIORITY_LOW;
+                priority = NotificationCompat.PRIORITY_DEFAULT;
             }
             else if(importance.compareToIgnoreCase("low")==0){
-                priority = NotificationCompat.PRIORITY_MIN;
+                priority = NotificationCompat.PRIORITY_LOW;
             }
         }
         builder.setPriority(priority);

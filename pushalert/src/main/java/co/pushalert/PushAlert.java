@@ -299,6 +299,11 @@ public class PushAlert {
                     }
                 }
             }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
         }, true);
     }
 
@@ -352,6 +357,11 @@ public class PushAlert {
                     }
                 }
             }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
         }, true);
     }
 
@@ -403,6 +413,11 @@ public class PushAlert {
                         LogM.e("Error in post remove from Segment: " + e.getMessage());
                     }
                 }
+            }
+
+            @Override
+            public void onFailure(String message) {
+
             }
         }, true);
     }
@@ -467,16 +482,16 @@ public class PushAlert {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             int importance_int = NotificationManager.IMPORTANCE_DEFAULT;
             if(importance.compareToIgnoreCase("urgent")==0){
-                importance_int = NotificationManager.IMPORTANCE_HIGH;
+                importance_int = NotificationManager.IMPORTANCE_MAX;
             }
             else if(importance.compareToIgnoreCase("high")==0){
-                //default
+                importance_int = NotificationManager.IMPORTANCE_HIGH;
             }
             else if(importance.compareToIgnoreCase("medium")==0){
-                importance_int = NotificationManager.IMPORTANCE_LOW;
+                //importance_int = NotificationManager.IMPORTANCE_DEFAULT;
             }
             else if(importance.compareToIgnoreCase("low")==0){
-                importance_int = NotificationManager.IMPORTANCE_MIN;
+                importance_int = NotificationManager.IMPORTANCE_LOW;
             }
 
             NotificationChannel channel = new NotificationChannel(channelID,
@@ -662,6 +677,11 @@ public class PushAlert {
                     }
                 }
             }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
         }, true);
     }
 
@@ -804,6 +824,11 @@ public class PushAlert {
                         LogM.e("Error in post sending Analytics: " + e.getMessage());
                     }
                 }
+            }
+
+            @Override
+            public void onFailure(String message) {
+
             }
         }, true);
     }
@@ -1266,6 +1291,11 @@ public class PushAlert {
 
                 sendingSubsID = false;
             }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
         }, true);
     }
 
@@ -1316,6 +1346,11 @@ public class PushAlert {
                         LogM.e("Error in post setAppNotificationPermissionState: " + e.getMessage());
                     }
                 }
+            }
+
+            @Override
+            public void onFailure(String message) {
+
             }
         }, true);
     }
@@ -1405,6 +1440,11 @@ public class PushAlert {
                 }
 
             }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
         }, true);
     }
 
@@ -1462,6 +1502,11 @@ public class PushAlert {
                     }
                 }
             }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
         }, true);
     }
 
@@ -1517,6 +1562,11 @@ public class PushAlert {
                     }
                 }
             }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
         }, true);
     }
 
@@ -1569,6 +1619,11 @@ public class PushAlert {
                         LogM.e("Error in post customEvent: " + e.getMessage());
                     }
                 }
+            }
+
+            @Override
+            public void onFailure(String message) {
+
             }
         }, true);
     }
@@ -1670,8 +1725,10 @@ public class PushAlert {
 
 
                 try {
+                    Helper.completePendingTasks(mContext);
                     FirebaseApp.initializeApp(mContext);
                     LogM.e("Initializing push notification lib.");
+
                 }
                 catch(NoClassDefFoundError e){
                     //It means Firebase is not added properly
