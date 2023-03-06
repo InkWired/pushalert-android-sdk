@@ -3,7 +3,9 @@ package co.pushalert;
 import static co.pushalert.PushAlert.NOTIFICATION_CHANNEL;
 import static co.pushalert.PushAlert.SUBSCRIBER_ID_PREF;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -167,6 +169,13 @@ public class MessageNotification {
 
         String channel = notification.getChannel();
         channel = (channel==null || channel.compareToIgnoreCase("")==0)?NOTIFICATION_CHANNEL:channel;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager=
+                (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null && notificationManager.getNotificationChannel(channel)==null){
+                channel = NOTIFICATION_CHANNEL;
+            }
+        }
 
         Map<String, String> attr_text = new HashMap<>();
         Map<String, String> no_attr_text = new HashMap<>();
@@ -705,6 +714,7 @@ public class MessageNotification {
     /**
      * To show notification with grouping
      */
+    @SuppressLint("MissingPermission")
     private static void notify(final Context context, final Notification notification, String notificationTag, int notificationID, NotificationCompat.Builder groupBuilder, int group_id) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(context);
 
@@ -718,6 +728,7 @@ public class MessageNotification {
     /**
      * To show notification without grouping
      */
+    @SuppressLint("MissingPermission")
     private static void notify(final Context context, final Notification notification, String notificationTag, int notificationID) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(context);
 
