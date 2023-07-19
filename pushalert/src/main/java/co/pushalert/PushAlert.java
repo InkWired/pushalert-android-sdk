@@ -134,8 +134,9 @@ public class PushAlert {
 
     /**
      * To initialize PushAlert
-     * @param reqAppId  Your app id (get it from Dashboard->App)
+     * @param reqAppId  Your app id (get it from Dashboard-&lt;App)
      * @param context   Your application context
+     * @return PushAlert static instance
      */
     public static PushAlert.InkWired init(String reqAppId, final Context context){
 
@@ -1109,6 +1110,7 @@ public class PushAlert {
     /**
      * Events are user interactions with content on your page. These are independent of app load and allow you to track the behavior of visitors. Examples of custom events can be a download, link click, scroll to a particular part of page, video play, ad-click and so on.
  interacted with (e.g. 'Video').
+     * @param eventCategory The category of the event (e.g. videos, product)
      * @param eventAction The type of interaction (e.g. 'play','pause','stopped').
      * @param eventLabel Used for categorizing events. (e.g. 'Launch Campaign').
      * @param eventValue A numeric value associated with the event (e.g. 2017).
@@ -1644,10 +1646,6 @@ public class PushAlert {
         return Helper.getPreference(mContext, SUBSCRIBER_ID_PREF, null);
     }
 
-    /**
-     * To get subscriber ID
-     * @return null if not subscribed otherwise a string
-     */
     /*public static boolean checkUserExplicitlyPermissionDenied(){
         return Helper.getPreference(mContext, EXPLICITLY_PERMISSION_DENIED, false);
     }*/
@@ -1689,7 +1687,7 @@ public class PushAlert {
             this.mContext = mContext;
         }
 
-        public void build(boolean byPassCheck){
+        void build(boolean byPassCheck){
             String currSubsID = PushAlert.getSubscriberID();
             //LogM.i("PushAlert Subscriber ID: " + currSubsID + ", attribution_time: " + Helper.getAttributionTime(mContext));
 

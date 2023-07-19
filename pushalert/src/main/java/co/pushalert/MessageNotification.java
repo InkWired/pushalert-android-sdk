@@ -439,7 +439,7 @@ public class MessageNotification {
         builder.setColor(accent_color);
 
         if(largeIcon!=null){
-            largeIcon = Helper.getRoundedCornerBitmap(largeIcon, 5);
+            largeIcon = Helper.getRoundedCornerBitmap(largeIcon, 10);
             if(customNotification){
                 collapsedView.setImageViewBitmap(R.id.notification_large_icon, largeIcon);
                 expandedView.setImageViewBitmap(R.id.notification_large_icon, largeIcon);
@@ -455,7 +455,7 @@ public class MessageNotification {
                     int tmp_large_icon = context.getResources().getIdentifier(largeIconRes, "drawable", context.getPackageName());
                     Bitmap b = Helper.getBitmap(context, tmp_large_icon);
                     if(customNotification){
-                        b = Helper.getRoundedCornerBitmap(b, 5);
+                        b = Helper.getRoundedCornerBitmap(b, 10);
                         collapsedView.setImageViewBitmap(R.id.notification_large_icon, b);
                         expandedView.setImageViewBitmap(R.id.notification_large_icon, b);
                     }

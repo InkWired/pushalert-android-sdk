@@ -699,7 +699,7 @@ class Helper {
     public static Bitmap getBitmap (Context context, int drawableResId) {
         Drawable drawable = ContextCompat.getDrawable(context, drawableResId);
 
-        Bitmap bitmap = null;
+        Bitmap bitmap;
 
         if (drawable instanceof BitmapDrawable) {
             BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
@@ -708,7 +708,7 @@ class Helper {
             }
         }
 
-        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+        if(drawable==null || (drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0)) {
             bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
         } else {
             bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
@@ -731,8 +731,7 @@ class Helper {
         final Paint paint = new Paint();
         final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
         final RectF rectF = new RectF(rect);
-        int pixels = Math.round(10 * Resources.getSystem().getDisplayMetrics().density);
-        final float roundPx = pixels;
+        final float roundPx = Math.round(dp * Resources.getSystem().getDisplayMetrics().density);
 
         paint.setAntiAlias(true);
         canvas.drawARGB(0, 0, 0, 0);
@@ -752,6 +751,7 @@ class Helper {
         int retry_allowed = 3;
         boolean add_delay = false;
         long delay = 2500L;
+        String last_err_message = "";
 
         while(retry_count<retry_allowed) {
             try {
@@ -766,13 +766,14 @@ class Helper {
                 return BitmapFactory.decodeStream(new URL(url).openConnection().getInputStream());
             } catch (Exception e) {
                 LogM.e("Issue while getting bitmap from url - " + e.getMessage());
+                last_err_message = e.getMessage();
             }
 
             add_delay = true;
             retry_count++;
         }
 
-        Helper.addPendingTask(context, "imgUrl", url);
+        Helper.addPendingTask(context, "imgUrl", url + "-" + last_err_message);
         return null;
     }
 
