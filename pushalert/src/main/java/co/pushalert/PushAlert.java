@@ -20,6 +20,7 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -121,6 +122,7 @@ public class PushAlert {
 
     static PAInAppBehaviour mInAppBehaviour = PAInAppBehaviour.NOTIFICATION;
     static PAOptInMode mOptInMode = PAOptInMode.AUTO;
+    static long mOptInDelay = 0L;
     static PASubscribe mOnSubscribeListener = null;
     static FirebaseAnalytics mFirebaseAnalytics = null;
 
@@ -188,11 +190,11 @@ public class PushAlert {
     public static void setOptInMode(PAOptInMode optInMode){
         PushAlert.mOptInMode = optInMode;
         if(optInMode == PAOptInMode.AUTO || optInMode == PAOptInMode.TWO_STEP){
-            getInstance().build(false);
+            getInstance().build(false, false);
         }
         else if(optInMode == PAOptInMode.MANUAL){
             if(PushAlert.getSubscriberID()!=null){
-                getInstance().build(false);
+                getInstance().build(false, false);
             }
         }
     }
@@ -209,19 +211,19 @@ public class PushAlert {
 
         if(direct){
             if (PushAlert.getOSNotificationPermissionState(mContext)) {
-                getInstance().build(true);
+                getInstance().build(true, true);
             }
             else{
-                getInstance().requestPermissionActivity(PAOptInMode.MANUAL);
+                getInstance().requestPermissionActivity(PAOptInMode.MANUAL, 0);
             }
         }
         else {
             if (mOptInMode == PAOptInMode.MANUAL) {
                 mOptInMode = PAOptInMode.AUTO;
-                getInstance().build(true);
+                getInstance().build(true, true);
                 mOptInMode = PAOptInMode.MANUAL;
             } else {
-                getInstance().build(true);
+                getInstance().build(true, true);
             }
         }
 
@@ -990,7 +992,7 @@ public class PushAlert {
         try {
             Helper.setPreference(mContext, USER_PRIVACY_CONSENT, privacyConsent);
             if(privacyConsent){
-                getInstance().build(true);
+                getInstance().build(true, true);
             }
             else{
                 Helper.setSubscriptionStatus(mContext, PushAlert.PA_SUBS_STATUS_DENIED);
@@ -1687,7 +1689,7 @@ public class PushAlert {
             this.mContext = mContext;
         }
 
-        void build(boolean byPassCheck){
+        void build(boolean byPassCheck, boolean userTriggered){
             String currSubsID = PushAlert.getSubscriberID();
             //LogM.i("PushAlert Subscriber ID: " + currSubsID + ", attribution_time: " + Helper.getAttributionTime(mContext));
 
@@ -1699,14 +1701,22 @@ public class PushAlert {
                 PushAlert.mOptInMode = PAOptInMode.TWO_STEP;
             }
 
-            if (condition1 || condition2 || condition3 || byPassCheck) {
+             if (condition1 || condition2 || condition3 || byPassCheck) {
 
                 if(currSubsID!=null && !PushAlert.getOSNotificationPermissionState(mContext) && !byPassCheck){
-                    //Permission is changed after subscribing
-                    if(paUnsubscribeWhenNotificationsAreDisabled){
-                        LogM.i("Notification permission is changed to disabled and unsubscribe when notification disabled is true. So, unsubscribing user and no firebase initialization");
-                        PushAlert.unsubscribeNotificationDisabled(mContext);
-                        return;
+                    //Two possibilities - Permission is changed after subscribing or user just reinstalled the app from backup
+                    if(Helper.isAndroid13AndAbove()){
+                        checkPermissionRationale();
+                        if (paUnsubscribeWhenNotificationsAreDisabled) {
+                            return;
+                        }
+                    }
+                    else {
+                        if (paUnsubscribeWhenNotificationsAreDisabled) {
+                            LogM.i("Notification permission is changed to disabled and unsubscribe when notification disabled is true. So, unsubscribing user and no firebase initialization");
+                            PushAlert.unsubscribeNotificationDisabled(mContext);
+                            return;
+                        }
                     }
                 }
                 else if(currSubsID==null && paUnsubscribeWhenNotificationsAreDisabled && !PushAlert.getOSNotificationPermissionState(mContext) && Helper.getSubscriptionStatus(mContext)==PA_SUBS_STATUS_UNSUBSCRIBED_NOTIFICATION_DISABLED && !byPassCheck){
@@ -1717,7 +1727,7 @@ public class PushAlert {
                             (Helper.isAndroid13AndAbove() || mOptInMode == PAOptInMode.TWO_STEP) && !PushAlert.getOSNotificationPermissionState(mContext)) {
                     ///LogM.e("PushAlertSDK", "Two Step Opt In Mode - " + (mOptInMode == PAOptInMode.TWO_STEP));
 
-                    requestPermissionActivity(mOptInMode);
+                    requestPermissionActivity(mOptInMode, userTriggered?0:mOptInDelay);
                     return;
                 }
 
@@ -1775,7 +1785,7 @@ public class PushAlert {
 
         }
 
-        private void requestPermissionActivity(PAOptInMode optInMode){
+        private void requestPermissionActivity(PAOptInMode optInMode, long optInDelay){
             PermissionRequestActivity.registerAsCallback(new PermissionRequestActivity.PermissionCallback(){
                 @Override
                 public void onAccept() {
@@ -1793,6 +1803,38 @@ public class PushAlert {
             Intent intent = new Intent(mContext, PermissionRequestActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.putExtra("optInModeStr", optInMode.name());
+
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mContext.startActivity(intent);
+                }
+            }, optInDelay);
+
+        }
+
+
+        private void checkPermissionRationale(){
+            LogM.i("Check permission rationale");
+            PermissionRequestActivity.registerAsCallback(new PermissionRequestActivity.PermissionCallback(){
+                @Override
+                public void onAccept() {
+                    getInstance().build(true, false);
+                }
+
+                @Override
+                public void onReject() {
+                    LogM.i("Permission rationale is true");
+                    if(paUnsubscribeWhenNotificationsAreDisabled){
+                        LogM.i("Notification permission is changed to disabled and unsubscribe when notification disabled is true. So, unsubscribing user and no firebase initialization");
+                        PushAlert.unsubscribeNotificationDisabled(mContext);
+                    }
+                }
+            });
+
+            Intent intent = new Intent(mContext, PermissionRequestActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.putExtra("checkRationale", true);
             mContext.startActivity(intent);
         }
 
@@ -1940,6 +1982,17 @@ public class PushAlert {
          */
         public PushAlert.InkWired customizeTwoStep(TwoStepHelper twoStepHelper){
             PushAlert.twoStepHelper = twoStepHelper;
+            return getInstance();
+        }
+
+        /**
+         * To set opt-in delay
+         * @param optInDelay delay in milliseconds
+         * @return PushAlert Instance
+         */
+        public PushAlert.InkWired setOptInDelay(long optInDelay){
+            PushAlert.mOptInDelay = optInDelay;
+
             return getInstance();
         }
 

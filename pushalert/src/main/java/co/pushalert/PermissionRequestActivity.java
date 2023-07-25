@@ -49,6 +49,23 @@ public class PermissionRequestActivity extends Activity {
         }
 
         boolean shouldShowRequestPermission =  Helper.isAndroid13AndAbove() && ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS);
+
+        try {
+            boolean checkRationale = getIntent().getBooleanExtra("checkRationale", false);
+            if(checkRationale){
+                if(!shouldShowRequestPermission){
+                    permissionCallback.onAccept();
+                }
+                else{
+                    permissionCallback.onReject();
+                }
+                finish();
+            }
+        }
+        catch (Exception e){
+            LogM.e("Not checking checkRationale.");
+        }
+
         if (optInModeEnum != PushAlert.PAOptInMode.MANUAL &&
                 (optInModeEnum == PushAlert.PAOptInMode.TWO_STEP || shouldShowRequestPermission)) {
             showInMessage();
