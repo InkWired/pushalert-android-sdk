@@ -8,9 +8,10 @@ import org.json.JSONObject;
  * @since 02-11-2022
  */
 public class PANotification {
-    private int id=0, group_id=-1,ref_id=0;
+    private long id=0L, local_notf_id=-1L;
+    private int group_id=-1,ref_id=0;
     private String short_title, content, image, url, icon, channel, sound_res, led_color, accent_color, small_icon_res, group_key, lock_screen_visibility, priority;
-    private int local_notf_id=-1, sent_time = 0, template_id=0, campaign_id=0;
+    private int sent_time = 0, template_id=0, campaign_id=0;
     private String short_title_attr, content_attr, url_attr, campaign, header_text;
 
     private String action1_title, action1_url, action1_icon_res, action1_id;
@@ -68,7 +69,7 @@ public class PANotification {
                           String type, String extraData, String ref_id, String campaign_id, String campaign, String header_text, String template_id){
 
         try{
-            this.id = Integer.parseInt(id);
+            this.id = Long.parseLong(id);
         }
         catch (Exception ignored){}
 
@@ -214,11 +215,23 @@ public class PANotification {
         this.image = image;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public int getNotificationRequestCode() {
+        int requestCode = 0;
+        if(id>60000000000L){
+            requestCode = (int)(id-60000000000L);
+        }
+        else if(id>0){
+            requestCode = (int)(id-150000000L);
+        }
+
+        return requestCode;
+    }
+
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -230,8 +243,20 @@ public class PANotification {
         this.icon = icon;
     }
 
-    public int getLocalNotfId() {
+    public long getLocalNotfId() {
         return local_notf_id;
+    }
+
+    public int getLocalNotfRequestCode() {
+        int requestCode = -1;
+        if(local_notf_id>60000000000L){
+            requestCode = (int)(id-60000000000L);
+        }
+        else if(local_notf_id>0){
+            requestCode = (int)(id-150000000L);
+        }
+
+        return requestCode;
     }
 
     public String getPriority() {

@@ -305,6 +305,11 @@ public class MessageNotification {
 
         String content_text = ticker;
 
+        int notification_request_code = notification.getNotificationRequestCode();
+        if(notification.getLocalNotfRequestCode()!=-1){
+            notification_request_code = notification.getLocalNotfRequestCode();
+        }
+
         Intent intent;
         intent = new Intent(context, NotificationHandler.class);
 
@@ -313,6 +318,7 @@ public class MessageNotification {
         intent.putExtra("extraData", notification.getExtraData().toString());
 
         intent.putExtra("notification_id", notification.getId());
+        intent.putExtra("notification_request_code", notification_request_code);
         intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
         intent.putExtra("is_action", false);
         intent.putExtra("uid", uid);
@@ -336,7 +342,7 @@ public class MessageNotification {
                 .setContentIntent(
                         PendingIntent.getActivity(
                                 context,
-                                notification.getId(),
+                                notification.getNotificationRequestCode(),
                                 intent,
                                 pendingIntentFlag))
                 //.setOnlyAlertOnce(PushAlert.isOnlyAlertOnce())
@@ -569,6 +575,7 @@ public class MessageNotification {
             action1_intent.putExtra("url", action1_url);
             action1_intent.putExtra("extraData", notification.getExtraData().toString());
             action1_intent.putExtra("notification_id", notification.getId());
+            intent.putExtra("notification_request_code", notification_request_code);
             action1_intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
             action1_intent.putExtra("is_action", true);
             action1_intent.putExtra("uid", uid);
@@ -581,7 +588,7 @@ public class MessageNotification {
                     action1_title,
                     PendingIntent.getActivity(
                             context,
-                            notification.getId(),
+                            notification.getNotificationRequestCode(),
                             action1_intent,
                             pendingIntentFlag));
         }
@@ -604,6 +611,7 @@ public class MessageNotification {
             action2_intent.putExtra("url", action2_url);
             action2_intent.putExtra("extraData", notification.getExtraData().toString());
             action2_intent.putExtra("notification_id", notification.getId());
+            intent.putExtra("notification_request_code", notification_request_code);
             action2_intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
             action2_intent.putExtra("is_action", true);
             action2_intent.putExtra("uid", uid);
@@ -616,7 +624,7 @@ public class MessageNotification {
                     action2_title,
                     PendingIntent.getActivity(
                             context,
-                            notification.getId(),
+                            notification.getNotificationRequestCode(),
                             action2_intent,
                             pendingIntentFlag));
         }
@@ -639,6 +647,7 @@ public class MessageNotification {
             action3_intent.putExtra("url", action3_url);
             action3_intent.putExtra("extraData", notification.getExtraData().toString());
             action3_intent.putExtra("notification_id", notification.getId());
+            intent.putExtra("notification_request_code", notification_request_code);
             action3_intent.putExtra("campaign", (notification.getCampaignId()>0)?(notification.getCampaign() + " ("+notification.getCampaignId()+")"):"None");
             action3_intent.putExtra("is_action", true);
             action3_intent.putExtra("uid", uid);
@@ -651,15 +660,9 @@ public class MessageNotification {
                     action3_title,
                     PendingIntent.getActivity(
                             context,
-                            notification.getId(),
+                            notification.getNotificationRequestCode(),
                             action3_intent,
                             pendingIntentFlag));
-        }
-
-
-        int notification_id = notification.getId();
-        if(notification.getLocalNotfId()!=-1){
-            notification_id = notification.getLocalNotfId();
         }
 
 
@@ -698,14 +701,14 @@ public class MessageNotification {
             if(ledColorCheck){
                 notificationFinal.flags |= Notification.FLAG_SHOW_LIGHTS;
             }
-            notify(context, notificationFinal, NOTIFICATION_TAG, notification_id, groupBuilder, notification.getGroupId());
+            notify(context, notificationFinal, NOTIFICATION_TAG, notification_request_code, groupBuilder, notification.getGroupId());
 
         } else {
             Notification notificationFinal = builder.build();
             if(ledColorCheck){
                 notificationFinal.flags |= Notification.FLAG_SHOW_LIGHTS;
             }
-            notify(context, notificationFinal, NOTIFICATION_TAG, notification_id);
+            notify(context, notificationFinal, NOTIFICATION_TAG, notification_request_code);
         }
 
 
@@ -715,13 +718,13 @@ public class MessageNotification {
      * To show notification with grouping
      */
     @SuppressLint("MissingPermission")
-    private static void notify(final Context context, final Notification notification, String notificationTag, int notificationID, NotificationCompat.Builder groupBuilder, int group_id) {
+    private static void notify(final Context context, final Notification notification, String notificationTag, int notificationRequestCode, NotificationCompat.Builder groupBuilder, int group_id) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(context);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             nm.notify(notificationTag, group_id, groupBuilder.build());
         }
-        nm.notify(notificationTag, notificationID, notification);
+        nm.notify(notificationTag, notificationRequestCode, notification);
     }
 
 
@@ -729,15 +732,15 @@ public class MessageNotification {
      * To show notification without grouping
      */
     @SuppressLint("MissingPermission")
-    private static void notify(final Context context, final Notification notification, String notificationTag, int notificationID) {
+    private static void notify(final Context context, final Notification notification, String notificationTag, int notificationRequestCode) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(context);
 
-        nm.notify(notificationTag, notificationID, notification);
+        nm.notify(notificationTag, notificationRequestCode, notification);
     }
 
-    static void cancel(final Context context, String notificationTag, int notificationID) {
+    static void cancel(final Context context, String notificationTag, int notificationRequestCode) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(context);
 
-        nm.cancel(notificationTag, notificationID);
+        nm.cancel(notificationTag, notificationRequestCode);
     }
 }

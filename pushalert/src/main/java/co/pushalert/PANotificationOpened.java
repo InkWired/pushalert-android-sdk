@@ -9,7 +9,7 @@ import org.json.JSONObject;
  */
 
 public class PANotificationOpened {
-    private final int notification_id;
+    private final long notification_id;
     private final JSONObject extraData;
     private final String url;
     private final String action_id;
@@ -21,7 +21,7 @@ public class PANotificationOpened {
      * @param extraData key-value pair of extra data
      * @param action_id action_id as specificed while sending notification, action_id main for main notification
      */
-    PANotificationOpened(int notification_id, String url, String action_id, JSONObject extraData){
+    PANotificationOpened(long notification_id, String url, String action_id, JSONObject extraData){
         this.notification_id = notification_id;
         this.url = url;
         this.extraData = extraData;
@@ -32,7 +32,7 @@ public class PANotificationOpened {
      * To get notification id
      * @return notification id
      */
-    public int getNotificationId() {
+    public long getNotificationId() {
         return notification_id;
     }
 

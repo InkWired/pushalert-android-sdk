@@ -37,7 +37,8 @@ public class NotificationHandler extends Activity {
     }
 
     public void processIntent(Context context, Intent intent){
-        int notificationID = intent.getIntExtra("notification_id", 0);
+        long notificationID = intent.getLongExtra("notification_id", 0);
+        int notificationRequestCode = intent.getIntExtra("notificationRequestCode", 0);
         int group_id = intent.getIntExtra("group_id", 0);
         boolean clearGroup = false;
         if(intent.getBooleanExtra("is_action", false)){
@@ -53,7 +54,7 @@ public class NotificationHandler extends Activity {
                         String groupKey = null;
 
                         for (StatusBarNotification statusBarNotification : statusBarNotifications) {
-                            if (notificationID == statusBarNotification.getId()) {
+                            if (notificationRequestCode == statusBarNotification.getId()) {
                                 groupKey = statusBarNotification.getGroupKey();
                                 break;
                             }
@@ -79,7 +80,7 @@ public class NotificationHandler extends Activity {
                 }
             }
 
-            clearNotification(context, notificationID);
+            clearNotification(context, notificationRequestCode);
             if(clearGroup){
                 clearNotification(context, group_id);
             }
@@ -90,9 +91,9 @@ public class NotificationHandler extends Activity {
             sendClickEvent(context, intent.getStringExtra("uid"), notificationID, intent.getIntExtra("clicked_on", 0), intent.getIntExtra("type", 0), intent.getIntExtra("eid", 0));
 
             //FirebaseAnalytics
-            Helper.firebaseAnalyticsLogEvent(context, Helper.EVENT_NOTIFICATION_CLICKED, notificationID + "", intent.getStringExtra("campaign"));
+            Helper.firebaseAnalyticsLogEvent(context, Helper.EVENT_NOTIFICATION_CLICKED, String.valueOf(notificationID), intent.getStringExtra("campaign"));
 
-            Helper.saveLastClickedNotificationInfo(context, notificationID+"", intent.getStringExtra("campaign"));
+            Helper.saveLastClickedNotificationInfo(context, String.valueOf(notificationID), intent.getStringExtra("campaign"));
         }
 
         openUri(context, intent);
@@ -104,7 +105,7 @@ public class NotificationHandler extends Activity {
 
         NotificationOpener notificationOpener = PushAlert.getNotificationOpener();
         if(notificationOpener!=null){
-            int notificationID = intent.getIntExtra("notification_id", 0);
+            long notificationID = intent.getLongExtra("notification_id", 0);
             JSONObject extraData = new JSONObject();
             try{
                 extraData = new JSONObject(intent.getStringExtra("extraData"));
@@ -131,7 +132,7 @@ public class NotificationHandler extends Activity {
         finish();
     }
 
-    public void sendClickEvent(Context context, String uid, int notificationID, int clicked_on, int type, int eid){
+    public void sendClickEvent(Context context, String uid, long notificationID, int clicked_on, int type, int eid){
         Helper.connectWithPushAlert("get", new ConnectionHelper(){
 
             @Override
@@ -187,9 +188,9 @@ public class NotificationHandler extends Activity {
         },false);
     }
 
-    public void clearNotification(Context context, int notificationID){
+    public void clearNotification(Context context, int notificationRequestCode){
         NotificationManagerCompat nMgr = NotificationManagerCompat.from(context);
-        nMgr.cancel(NOTIFICATION_TAG, notificationID);
+        nMgr.cancel(NOTIFICATION_TAG, notificationRequestCode);
     }
 
     /*public void closeNotificationDrawer(Context context){

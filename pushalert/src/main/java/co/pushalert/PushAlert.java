@@ -756,12 +756,12 @@ public class PushAlert {
         ProductAlert(mContext, "price_drop", "remove", product_id, variant_id, 0, null);
     }
 
-    private  static void reportAnalytics(String analyticsJSONStr, int conversionReceivedNotificationId){
+    private  static void reportAnalytics(String analyticsJSONStr, long conversionReceivedNotificationId){
         /*if(conversionNotificationId==-1){
             conversionNotificationId = getConversionNotificationId(); //Checking if there is another click or attribution
         }*/
-        int conversionNotificationId = -1;
-        int conversionClickedNotificationId = getConversionClickedNotificationId();
+        long conversionNotificationId = -1;
+        long conversionClickedNotificationId = getConversionClickedNotificationId();
 
         int direct =0;
         if(conversionClickedNotificationId!=-1){
@@ -775,7 +775,7 @@ public class PushAlert {
         //Reset
         Helper.removeLastClickedNotificationInfo(mContext);
 
-        int finalConversionNotificationId = conversionNotificationId;
+        long finalConversionNotificationId = conversionNotificationId;
         int finalDirect = direct;
 
         Helper.connectWithPushAlert("post", new ConnectionHelper() {
@@ -836,12 +836,12 @@ public class PushAlert {
         }, true);
     }
 
-    static int getConversionReceivedNotificationId(){
+    static long getConversionReceivedNotificationId(){
         try {
             JSONObject lastNotificationInfo = Helper.getLastReceivedNotificationInfo(mContext);
             if (lastNotificationInfo != null) {
                 if (lastNotificationInfo.getLong("time") >= System.currentTimeMillis() - Helper.getAttributionTime(mContext)) {
-                    return lastNotificationInfo.getInt("notification_id");
+                    return lastNotificationInfo.getLong("notification_id");
                 }
             }
         }
@@ -852,11 +852,11 @@ public class PushAlert {
         return  -1;
     }
 
-    static int getConversionClickedNotificationId(){
+    static long getConversionClickedNotificationId(){
         try {
             JSONObject lastNotificationInfo = Helper.getLastClickedNotificationInfo(mContext);
             if (lastNotificationInfo != null) {
-                return lastNotificationInfo.getInt("notification_id");
+                return lastNotificationInfo.getLong("notification_id");
             }
         }
         catch (Exception e){
@@ -872,10 +872,10 @@ public class PushAlert {
      * @param conversion_value conversion value
      */
     public static void reportConversionWithValue(String conversion_name, double conversion_value){
-        int conversionNotificationId = -1;
+        long conversionNotificationId = -1;
 
-        int conversionReceivedNotificationId = getConversionReceivedNotificationId();
-        int conversionClickedNotificationId = getConversionClickedNotificationId();
+        long conversionReceivedNotificationId = getConversionReceivedNotificationId();
+        long conversionClickedNotificationId = getConversionClickedNotificationId();
 
         int direct =0;
         if(conversionClickedNotificationId!=-1){
@@ -1154,7 +1154,7 @@ public class PushAlert {
                         display.getMetrics(metrics);
                     }
 
-                    postDataParams.put("action=", (action.equalsIgnoreCase("unsubscribe_notification_disabled"))?"unsubscribe":action);
+                    postDataParams.put("action", (action.equalsIgnoreCase("unsubscribe_notification_disabled"))?"unsubscribe":action);
                     postDataParams.put("pa_id", pushalert_info[1]);
                     postDataParams.put("domain_id", pushalert_info[2]);
                     postDataParams.put("host", pushalert_info[0]);
@@ -1166,8 +1166,8 @@ public class PushAlert {
                     postDataParams.put("browserMajor", "1.0");
                     postDataParams.put("os", "android");
                     postDataParams.put("osVer", Build.VERSION.RELEASE);
-                    postDataParams.put("resoln_width", metrics.widthPixels+"");
-                    postDataParams.put("resoln_height", metrics.heightPixels+"");
+                    postDataParams.put("resoln_width", String.valueOf(metrics.widthPixels));
+                    postDataParams.put("resoln_height", String.valueOf(metrics.heightPixels));
                     postDataParams.put("color_depth", "-1");
                     postDataParams.put("language", Locale.getDefault().getLanguage());
                     postDataParams.put("engine", "na");
@@ -1514,7 +1514,7 @@ public class PushAlert {
         }, true);
     }
 
-    static void ProcessReportConversion(Context context, int notification_id, String conversion_name, double conversion_value, int direct) {
+    static void ProcessReportConversion(Context context, long notification_id, String conversion_name, double conversion_value, int direct) {
         Helper.connectWithPushAlert("post", new ConnectionHelper() {
             @Override
             public JSONObject getJSONParams() {
@@ -1681,8 +1681,8 @@ public class PushAlert {
         private static final float SMALLEST_DISPLACEMENT = 100f;
 
         private static boolean isLifecycleCallbacksAttached = false;
-        private static int conversionReceivedNotificationId = -1;
-        private static int conversionClickedNotificationId = -1;
+        private static long conversionReceivedNotificationId = -1;
+        private static long conversionClickedNotificationId = -1;
 
 
         private  InkWired(Context mContext){
